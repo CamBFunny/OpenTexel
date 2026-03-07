@@ -2,6 +2,7 @@ import pygame
 import data
 import time
 import numpy as np
+import os
 import random
 import inspect
 import asyncio
@@ -14,24 +15,26 @@ from pygame.locals import (KEYDOWN, QUIT, KEYUP, K_LCTRL,
                            K_a, K_s, K_d, K_f, K_g,
                            K_z, K_x, K_c, K_v, K_b)
 
-def Fighter(self, name, HP, ATK, DEF, WIS, AGI, LV, SEF, rarity, tribe, sign, type):
-    Fighter.name = name
-    Fighter.HP = HP
-    Fighter.ATK = ATK
-    Fighter.DEF = DEF
-    Fighter.WIS = WIS
-    Fighter.AGI = AGI
-    Fighter.LV = LV
-    Fighter.SEF = SEF
-    Fighter.rarity = rarity
-    Fighter.tribe = tribe
-    Fighter.sign = sign
-    Fighter.type = type
+class Fighter():
+    def __init__(self, name):
+        self.name = name
+        self.HP = 1
+        self.ATK = 1
+        self.DEF = 1
+        self.WIS = 1
+        self.AGI = 1
+        self.LV = 1
+        self.SEF = 0
+        self.rarity = 'Common'
+        self.tribe = 'null'
+        self.sign = 'null'
+        self.type = 'null'
 
-empty = Fighter('-', 0, 0, 0, 0, 0, 0, 0,
-                'null', 'null', 'null', 'null', 'null')
+empty = Fighter('-')
 
-band = np.array([['empty',] * 3]*3)
+band = np.array([[empty,] * 3]*3)
+barracks = {}
+
 running = True
 keys_pressed = set()
 clock = pygame.time.Clock()
@@ -40,21 +43,63 @@ framerate = 60; dt = 0      # Makes time-based calculations relative to framerat
 
 # Screen settings
 resolution = 1             # Set window size; 16:9 ratio .8-720p .6-540p .5~480p
-SCREEN_SIZE = [int(1600 * resolution), int(900 * resolution)]
+SCREEN_SIZE = [int(1440 * resolution), int(900 * resolution)]
 screen = pygame.display.set_mode([SCREEN_SIZE[0], SCREEN_SIZE[1]])
 # Initialize PyGame
 pygame.init()
-
 pause = False
 true_counter = 0
 realtime = 0
 frame_counter = 0
 mouse_pos = pygame.mouse.get_pos()
 
+Fonts = {}
+fsizes = [10, 15, 20, 23, 25, 30, 37, 40, 55]
+
+# Fonts
+for i in fsizes:
+    Fonts[f"mono{i}b"] = pygame.font.SysFont("Mono", i, bold=True)
+    Fonts[f"mono{i}"] = pygame.font.SysFont("Mono", i, bold=False)
+    Fonts[f"helv{i}b"] = pygame.font.SysFont("Helvetica", i, bold=True)
+    Fonts[f"helv{i}"] = pygame.font.SysFont("Helvetica", i, bold=False)
+
+# Load colors
+Colors = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 'white': (255, 255, 255),
+          'yellow': (255, 255, 0), 'orange': (255, 150, 0), 'pink': (255, 0, 150),
+          'purple': (150, 0, 255), 'cyan': (0, 255, 255), 'teal': (0, 150, 255),
+          'lime': (150, 255, 0), 'seafoam': (0, 255, 150), 'magenta': (255, 0, 255)}
+
 # // FUNCTIONS //
 def draw_text(text, font, text_col, x, y):  # Function for outputting text onto the screen
     img = font.render(text, True, text_col)
     screen.blit(img, (x, y))
+
+Portrait = {}
+
+def image(name):
+    name = pygame.image.load(f"lib/fighters/{name}_Sprite.webp")
+    return name
+
+background = pygame.image.load(f"lib/images/background.png")
+sz = background.get_size()
+scl = SCREEN_SIZE[0] / sz[0]
+background = pygame.transform.scale(background, (sz[0] * scl, sz[1] * scl))
+
+def open(box):
+    if box == 'Basic':
+        value = random.choice(roster)
+
+    return value
+
+fighters = os.listdir('lib/fighters/')
+num_fighters = len(fighters)
+roster = {}
+for n in range(num_fighters):
+    sz = len(fighters[n])
+    for m in range(sz):
+        if fighters[n][m] == '_':
+            end = m
+    roster[n] = fighters[n][0:end]
 
 class Button():    # Function for clickable buttons on screen
     def __init__(self, x, y, image, scale):
@@ -89,6 +134,10 @@ class Button():    # Function for clickable buttons on screen
 
         return action
 
+LeftHold = False
+LeftClick = False
+fight = False
+
 while running: 
     # CONTROLS
     for event in pygame.event.get():
@@ -96,14 +145,14 @@ while running:
         if event.type == KEYDOWN:
             keys_pressed.add(event.key)  
         if event.type == pygame.QUIT:
-            true_pause = True
+            running = False
         # Reading Mouse Input
         if event.type == pygame.MOUSEWHEEL:
             if event.y == 1:
                 wheel_up = True
             if event.y == -1:
                 wheel_down = True
-        if pygame.mouse.get_pressed()[0] and not LeftClick and not LeftHold:	    # Left Click
+        if pygame.mouse.get_pressed()[0] and not LeftHold:	    # Left Click
             LeftClick = True
             LeftHold = True
             ClickBubble = True
@@ -133,6 +182,45 @@ while running:
 
     # Draw Screen
     screen.fill((5, 5, 10))
+    screen.blit(background, (0, -200))
+
+
+    if len(list(barracks.keys())) < 9:
+        pick = open('Basic')
+        before = pick
+        while pick in barracks.keys():
+            p = 1
+            pick = f"{pick}-{p}"
+            p += 1
+        barracks[pick] = Fighter(before)
+        Portrait[before] = image(before)
+    elif not fight:
+        fight = True
+        # Temporary band setup, remove once menus work
+        xyz = list(barracks)
+        for x in range(3):
+            for y in range(3):
+                index = x * 3 + y
+                band[x][y] = barracks[xyz[index]] # Automatically assign band fighter
+
+    # Source - https://stackoverflow.com/a/6350227
+    # Posted by Gustavo Giráldez
+    # Retrieved 2026-03-06, License - CC BY-SA 3.0
+
+    s = pygame.Surface((520, 515), pygame.SRCALPHA)  # per-pixel alpha
+    s.fill((25, 25, 25, 80))  # notice the alpha value in the color
+    screen.blit(s, (170, 300))
+
+    if fight:
+        for x in range(3):
+            for y in range(3):
+                pick = band[x][y]
+                space = 150
+                xx = 200 + space*x
+                yy = 330 + space*y
+                screen.blit(Portrait[pick.name], (xx, yy))
+                draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], xx + 20, yy + 125)
+
     pygame.display.update()
     dt = clock.tick(framerate) / 1000	# Makes movement or time-related events work independent of framerate
     if not pause:
