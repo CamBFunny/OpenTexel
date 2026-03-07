@@ -144,7 +144,7 @@ while running:
         # Reading Keyboard Input
         if event.type == KEYDOWN:
             keys_pressed.add(event.key)  
-        if event.type == pygame.QUIT:
+        if event.type == pygame.QUIT or K_ESCAPE in keys_pressed:
             running = False
         # Reading Mouse Input
         if event.type == pygame.MOUSEWHEEL:
@@ -193,6 +193,10 @@ while running:
             pick = f"{pick}-{p}"
             p += 1
         barracks[pick] = Fighter(before)
+        barracks[pick].ATK = random.choice(range(1, 10))
+        barracks[pick].DEF = random.choice(range(1, 10))
+        barracks[pick].WIS = random.choice(range(1, 10))
+        barracks[pick].AGI = random.choice(range(1, 10))
         Portrait[before] = image(before)
     elif not fight:
         fight = True
@@ -208,7 +212,7 @@ while running:
     # Retrieved 2026-03-06, License - CC BY-SA 3.0
 
     s = pygame.Surface((520, 515), pygame.SRCALPHA)  # per-pixel alpha
-    s.fill((25, 25, 25, 80))  # notice the alpha value in the color
+    s.fill((25, 25, 25, 100))  # notice the alpha value in the color
     screen.blit(s, (170, 300))
 
     if fight:
@@ -219,7 +223,8 @@ while running:
                 xx = 200 + space*x
                 yy = 330 + space*y
                 screen.blit(Portrait[pick.name], (xx, yy))
-                draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], xx + 20, yy + 125)
+                draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], xx + 25, yy + 125)
+                draw_text(f"{pick.ATK} ATK", Fonts['helv15b'], Colors['red'], xx + 90, yy + 125)
 
     pygame.display.update()
     dt = clock.tick(framerate) / 1000	# Makes movement or time-related events work independent of framerate
