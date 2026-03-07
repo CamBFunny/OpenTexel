@@ -14,7 +14,7 @@ from pygame.locals import (KEYDOWN, QUIT, KEYUP, K_LCTRL,
                            K_a, K_s, K_d, K_f, K_g,
                            K_z, K_x, K_c, K_v, K_b)
 
-def Fighter(self, name, HP, ATK, DEF, WIS, AGI, LV, SEF, rarity, tribe, sign, type)
+def Fighter(self, name, HP, ATK, DEF, WIS, AGI, LV, SEF, rarity, tribe, sign, type):
     Fighter.name = name
     Fighter.HP = HP
     Fighter.ATK = ATK
@@ -28,7 +28,9 @@ def Fighter(self, name, HP, ATK, DEF, WIS, AGI, LV, SEF, rarity, tribe, sign, ty
     Fighter.sign = sign
     Fighter.type = type
 
-empty = Fighter('-', 0, 0, 0, 0, 0, 0, 0, 'null', 'null', 'null', 'null')
+empty = Fighter('-', 0, 0, 0, 0, 0, 0, 0,
+                'null', 'null', 'null', 'null', 'null')
+
 band = np.array([['empty',] * 3]*3)
 running = True
 keys_pressed = set()
@@ -37,11 +39,17 @@ framerate = 60; dt = 0      # Makes time-based calculations relative to framerat
 # pygame.mouse.set_visible(False)     # Hide mouse cursor
 
 # Screen settings
-resolution = .96             # Set window size; 16:9 ratio .8-720p .6-540p .5~480p
+resolution = 1             # Set window size; 16:9 ratio .8-720p .6-540p .5~480p
 SCREEN_SIZE = [int(1600 * resolution), int(900 * resolution)]
 screen = pygame.display.set_mode([SCREEN_SIZE[0], SCREEN_SIZE[1]])
 # Initialize PyGame
 pygame.init()
+
+pause = False
+true_counter = 0
+realtime = 0
+frame_counter = 0
+mouse_pos = pygame.mouse.get_pos()
 
 # // FUNCTIONS //
 def draw_text(text, font, text_col, x, y):  # Function for outputting text onto the screen
