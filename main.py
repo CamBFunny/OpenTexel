@@ -47,6 +47,7 @@ home_pos = band_pos
 
 enemies = np.array([empty,] * 3)
 enemies_pos = np.array([0, 0] * 3)
+frontline = [0, 0, 0]
 
 barracks = {}
 
@@ -222,7 +223,6 @@ while running:
                 index = x * 3 + y
                 band[x][y] = barracks[xyz[index]] # Automatically assign band fighter
 
-
     if fight:
         s = pygame.Surface((520, 515), pygame.SRCALPHA)  # per-pixel alpha
         s.fill((25, 25, 25, 100))  # notice the alpha value in the color
@@ -234,6 +234,40 @@ while running:
                 screen.blit(Portrait[pick.name], pos)
                 draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125)
                 draw_text(f"{pick.ATK} ATK", Fonts['helv15b'], Colors['red'], pos[0] + 90, pos[1] + 125)
+
+        if K_1 in keys_pressed:
+            keys_pressed.remove(K_1)
+            frontline = band[:, 0]
+
+        if K_2 in keys_pressed:
+            keys_pressed.remove(K_2)
+            frontline = band[:, 1]
+
+        if K_3 in keys_pressed:
+            keys_pressed.remove(K_3)
+            frontline = band[:, 2]
+
+        if K_4 in keys_pressed:
+            keys_pressed.remove(K_4)
+            frontline = band[0]
+
+        if K_5 in keys_pressed:
+            keys_pressed.remove(K_5)
+            frontline = band[1]
+
+        if K_6 in keys_pressed:
+            keys_pressed.remove(K_6)
+            frontline = band[2]
+
+        if K_7 in keys_pressed:
+            keys_pressed.remove(K_7)
+            for n in range(3):
+                frontline[n] = band[n][n]
+
+        if K_8 in keys_pressed:
+            keys_pressed.remove(K_8)
+            for n in range(3):
+                frontline[n] = band[2-n][n]
 
     pygame.display.update()
     dt = clock.tick(framerate) / 1000	# Makes movement or time-related events work independent of framerate
