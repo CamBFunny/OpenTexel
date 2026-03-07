@@ -33,6 +33,21 @@ class Fighter():
 empty = Fighter('-')
 
 band = np.array([[empty,] * 3]*3)
+band_pos = np.array([[[0]*2] * 3]*3)
+space = 150
+bx = 170
+by = 300
+for x in range(3):
+    for y in range(3):
+        xx = bx + 30 + space * x
+        yy = by + 30 + space * y
+        band_pos[x][y] = [xx, yy]
+
+home_pos = band_pos
+
+enemies = np.array([empty,] * 3)
+enemies_pos = np.array([0, 0] * 3)
+
 barracks = {}
 
 running = True
@@ -207,24 +222,18 @@ while running:
                 index = x * 3 + y
                 band[x][y] = barracks[xyz[index]] # Automatically assign band fighter
 
-    # Source - https://stackoverflow.com/a/6350227
-    # Posted by Gustavo Giráldez
-    # Retrieved 2026-03-06, License - CC BY-SA 3.0
-
-    s = pygame.Surface((520, 515), pygame.SRCALPHA)  # per-pixel alpha
-    s.fill((25, 25, 25, 100))  # notice the alpha value in the color
-    screen.blit(s, (170, 300))
 
     if fight:
+        s = pygame.Surface((520, 515), pygame.SRCALPHA)  # per-pixel alpha
+        s.fill((25, 25, 25, 100))  # notice the alpha value in the color
+        screen.blit(s, (bx, by))
         for x in range(3):
             for y in range(3):
                 pick = band[x][y]
-                space = 150
-                xx = 200 + space*x
-                yy = 330 + space*y
-                screen.blit(Portrait[pick.name], (xx, yy))
-                draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], xx + 25, yy + 125)
-                draw_text(f"{pick.ATK} ATK", Fonts['helv15b'], Colors['red'], xx + 90, yy + 125)
+                pos = band_pos[x][y]
+                screen.blit(Portrait[pick.name], pos)
+                draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125)
+                draw_text(f"{pick.ATK} ATK", Fonts['helv15b'], Colors['red'], pos[0] + 90, pos[1] + 125)
 
     pygame.display.update()
     dt = clock.tick(framerate) / 1000	# Makes movement or time-related events work independent of framerate
