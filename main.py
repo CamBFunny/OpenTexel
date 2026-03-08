@@ -109,17 +109,17 @@ def image(name):
 swipe_list = (K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8)
 def swipe(pressed):
     if pressed == K_1:
-        return band[:, 0]
-    if pressed == K_2:
-        return band[:, 1]
-    if pressed == K_3:
-        return band[:, 2]
-    if pressed == K_4:
         return band[0]
-    if pressed == K_5:
+    if pressed == K_2:
         return band[1]
-    if pressed == K_6:
+    if pressed == K_3:
         return band[2]
+    if pressed == K_4:
+        return band[:, 0]
+    if pressed == K_5:
+        return band[:, 1]
+    if pressed == K_6:
+        return band[:, 2]
     if pressed == K_7:
         tmp = [0, 0, 0]
         for n in range(3):
@@ -198,7 +198,6 @@ while running:
             if event.key in swipe_list and event.key not in block_swipe:
                 frontline = swipe(event.key)
                 block_swipe.add(event.key)
-                print(frontline)
         if event.type == pygame.QUIT or K_ESCAPE in keys_pressed:
             running = False
         # Reading Mouse Input
