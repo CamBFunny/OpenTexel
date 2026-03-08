@@ -22,6 +22,36 @@ resolution = 1             # Set window size; 16:9 ratio .8-720p .6-540p .5~480p
 SCREEN_SIZE = [int(1440 * resolution), int(900 * resolution)]
 screen = pygame.display.set_mode([SCREEN_SIZE[0], SCREEN_SIZE[1]])
 
+running = True
+keys_pressed = set()
+clock = pygame.time.Clock()
+framerate = 60; dt = 0      # Makes time-based calculations relative to framerate
+# pygame.mouse.set_visible(False)     # Hide mouse cursor
+
+# Initialize PyGame
+pygame.init()
+pause = False
+true_counter = 0
+realtime = 0
+frame_counter = 0
+mouse_pos = pygame.mouse.get_pos()
+
+Fonts = {}
+fsizes = [10, 15, 20, 23, 25, 30, 37, 40, 55]
+
+# Fonts
+for i in fsizes:
+    Fonts[f"mono{i}b"] = pygame.font.SysFont("Mono", i, bold=True)
+    Fonts[f"mono{i}"] = pygame.font.SysFont("Mono", i, bold=False)
+    Fonts[f"helv{i}b"] = pygame.font.SysFont("Helvetica", i, bold=True)
+    Fonts[f"helv{i}"] = pygame.font.SysFont("Helvetica", i, bold=False)
+
+# Load colors
+Colors = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 'white': (255, 255, 255),
+          'yellow': (255, 255, 0), 'orange': (255, 150, 0), 'pink': (255, 0, 150),
+          'purple': (150, 0, 255), 'cyan': (0, 255, 255), 'teal': (0, 150, 255),
+          'lime': (150, 255, 0), 'seafoam': (0, 255, 150), 'magenta': (255, 0, 255)}
+
 class Fighter():
     def __init__(self, name):
         self.name = name
@@ -64,36 +94,6 @@ queue = 0
 attack_counter = 0
 attack_timer = 0
 block_swipe = {0,}
-
-running = True
-keys_pressed = set()
-clock = pygame.time.Clock()
-framerate = 60; dt = 0      # Makes time-based calculations relative to framerate
-# pygame.mouse.set_visible(False)     # Hide mouse cursor
-
-# Initialize PyGame
-pygame.init()
-pause = False
-true_counter = 0
-realtime = 0
-frame_counter = 0
-mouse_pos = pygame.mouse.get_pos()
-
-Fonts = {}
-fsizes = [10, 15, 20, 23, 25, 30, 37, 40, 55]
-
-# Fonts
-for i in fsizes:
-    Fonts[f"mono{i}b"] = pygame.font.SysFont("Mono", i, bold=True)
-    Fonts[f"mono{i}"] = pygame.font.SysFont("Mono", i, bold=False)
-    Fonts[f"helv{i}b"] = pygame.font.SysFont("Helvetica", i, bold=True)
-    Fonts[f"helv{i}"] = pygame.font.SysFont("Helvetica", i, bold=False)
-
-# Load colors
-Colors = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 'white': (255, 255, 255),
-          'yellow': (255, 255, 0), 'orange': (255, 150, 0), 'pink': (255, 0, 150),
-          'purple': (150, 0, 255), 'cyan': (0, 255, 255), 'teal': (0, 150, 255),
-          'lime': (150, 255, 0), 'seafoam': (0, 255, 150), 'magenta': (255, 0, 255)}
 
 # // FUNCTIONS //
 def draw_text(text, font, text_col, x, y):  # Function for outputting text onto the screen
@@ -253,20 +253,23 @@ while running:
         Portrait[before] = image(before)
     elif not fight:
         fight = True
+        enemy_health = 100
+        strike = True
         # Temporary band setup, remove once menus work
         xyz = list(barracks)
         for x in range(3):
-            enemies[x] = xyz[x]
+            enemies[x] = barracks[xyz[x]]
             for y in range(3):
                 index = x * 3 + y
                 band[x][y] = barracks[xyz[index]] # Automatically assign band fighter
 
     if fight:
+        draw_text(f"Enemy: {enemy_health} HP", Fonts['helv40b'], Colors['red'], 1020, 220)
         s = pygame.Surface((520, 515), pygame.SRCALPHA)  # per-pixel alpha
         s.fill((25, 25, 25, 100))  # notice the alpha value in the color
         screen.blit(s, (bx, by))
         for x in range(3):
-            screen.blit(Portrait[enemies[x]], enemies_pos[x])
+            screen.blit(Portrait[enemies[x].name], enemies_pos[x])
             for y in range(3):
                 pick = band[x][y]
                 pos = band_pos[x][y]
@@ -280,12 +283,18 @@ while running:
             queue += 1
 
         if queue == 3:
+            power = 0
             for y in range(3):
                 k = attack_counter
                 screen.blit(Portrait[attack_order[k][y].name], (front_pos[0], front_pos[1] + 150*y))
+                power += attack_order[k][y].ATK
+            if strike:
+                enemy_health -= power
+                strike = False
             if attack_timer >= 2:
                 attack_counter += 1
                 attack_timer = 0
+                strike = True
             else:
                 attack_timer += dt
             if attack_counter == 3:
