@@ -7,6 +7,8 @@ import random
 import inspect
 import asyncio
 import math
+
+from pygame.examples.music_drop_fade import SCREEN_SIZE
 # Import buttons
 from pygame.locals import (KEYDOWN, QUIT, KEYUP, K_LCTRL,
     K_UP, K_DOWN, K_LEFT, K_RIGHT, K_ESCAPE, K_TAB, K_LSHIFT, K_SPACE,
@@ -14,6 +16,11 @@ from pygame.locals import (KEYDOWN, QUIT, KEYUP, K_LCTRL,
                            K_q, K_w, K_e, K_r, K_t,
                            K_a, K_s, K_d, K_f, K_g,
                            K_z, K_x, K_c, K_v, K_b)
+
+# Screen settings
+resolution = 1             # Set window size; 16:9 ratio .8-720p .6-540p .5~480p
+SCREEN_SIZE = [int(1440 * resolution), int(900 * resolution)]
+screen = pygame.display.set_mode([SCREEN_SIZE[0], SCREEN_SIZE[1]])
 
 class Fighter():
     def __init__(self, name):
@@ -35,23 +42,28 @@ empty = Fighter('-')
 band = np.array([[empty,] * 3]*3)
 band_pos = np.array([[[0]*2] * 3]*3)
 space = 150
-bx = 170
+bx = 150
 by = 300
+enemies_pos = np.array([[0]*2] * 3)
 for x in range(3):
+    enemies_pos[x] = [SCREEN_SIZE[0] - 350, by + 30 + space * x]
     for y in range(3):
         xx = bx + 30 + space * x
         yy = by + 30 + space * y
         band_pos[x][y] = [xx, yy]
 
 home_pos = band_pos
+front_pos = (home_pos[2][0][0] + 200, home_pos[2][0][1])
 
 enemies = np.array([empty,] * 3)
-enemies_pos = np.array([0, 0] * 3)
 frontline = [0, 0, 0]
 
 barracks = {}
 attack_order = {}
 queue = 0
+attack_counter = 0
+attack_timer = 0
+block_swipe = {0,}
 
 running = True
 keys_pressed = set()
@@ -59,10 +71,6 @@ clock = pygame.time.Clock()
 framerate = 60; dt = 0      # Makes time-based calculations relative to framerate
 # pygame.mouse.set_visible(False)     # Hide mouse cursor
 
-# Screen settings
-resolution = 1             # Set window size; 16:9 ratio .8-720p .6-540p .5~480p
-SCREEN_SIZE = [int(1440 * resolution), int(900 * resolution)]
-screen = pygame.display.set_mode([SCREEN_SIZE[0], SCREEN_SIZE[1]])
 # Initialize PyGame
 pygame.init()
 pause = False
@@ -187,8 +195,10 @@ while running:
         # Reading Keyboard Input
         if event.type == KEYDOWN:
             keys_pressed.add(event.key)
-            if event.key in swipe_list:
+            if event.key in swipe_list and event.key not in block_swipe:
                 frontline = swipe(event.key)
+                block_swipe.add(event.key)
+                print(frontline)
         if event.type == pygame.QUIT or K_ESCAPE in keys_pressed:
             running = False
         # Reading Mouse Input
@@ -247,6 +257,7 @@ while running:
         # Temporary band setup, remove once menus work
         xyz = list(barracks)
         for x in range(3):
+            enemies[x] = xyz[x]
             for y in range(3):
                 index = x * 3 + y
                 band[x][y] = barracks[xyz[index]] # Automatically assign band fighter
@@ -256,6 +267,7 @@ while running:
         s.fill((25, 25, 25, 100))  # notice the alpha value in the color
         screen.blit(s, (bx, by))
         for x in range(3):
+            screen.blit(Portrait[enemies[x]], enemies_pos[x])
             for y in range(3):
                 pick = band[x][y]
                 pos = band_pos[x][y]
@@ -267,6 +279,21 @@ while running:
             attack_order[queue] = frontline
             frontline = [0, 0, 0]
             queue += 1
+
+        if queue == 3:
+            for y in range(3):
+                k = attack_counter
+                screen.blit(Portrait[attack_order[k][y].name], (front_pos[0], front_pos[1] + 150*y))
+            if attack_timer >= 2:
+                attack_counter += 1
+                attack_timer = 0
+            else:
+                attack_timer += dt
+            if attack_counter == 3:
+                queue = 0
+                attack_counter = 0
+                attack_order = {}
+                block_swipe = {0,}
 
     pygame.display.update()
     dt = clock.tick(framerate) / 1000	# Makes movement or time-related events work independent of framerate
