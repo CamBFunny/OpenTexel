@@ -50,6 +50,8 @@ enemies_pos = np.array([0, 0] * 3)
 frontline = [0, 0, 0]
 
 barracks = {}
+attack_order = {}
+queue = 0
 
 running = True
 keys_pressed = set()
@@ -95,6 +97,31 @@ Portrait = {}
 def image(name):
     name = pygame.image.load(f"lib/fighters/{name}_Sprite.webp")
     return name
+
+swipe_list = (K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8)
+def swipe(pressed):
+    if pressed == K_1:
+        return band[:, 0]
+    if pressed == K_2:
+        return band[:, 1]
+    if pressed == K_3:
+        return band[:, 2]
+    if pressed == K_4:
+        return band[0]
+    if pressed == K_5:
+        return band[1]
+    if pressed == K_6:
+        return band[2]
+    if pressed == K_7:
+        tmp = [0, 0, 0]
+        for n in range(3):
+            tmp[n] = band[n][n]
+        return tmp
+    if pressed == K_8:
+        tmp = [0, 0, 0]
+        for n in range(3):
+            tmp[n] = band[2 - n][n]
+        return tmp
 
 background = pygame.image.load(f"lib/images/background.png")
 sz = background.get_size()
@@ -159,7 +186,9 @@ while running:
     for event in pygame.event.get():
         # Reading Keyboard Input
         if event.type == KEYDOWN:
-            keys_pressed.add(event.key)  
+            keys_pressed.add(event.key)
+            if event.key in swipe_list:
+                frontline = swipe(event.key)
         if event.type == pygame.QUIT or K_ESCAPE in keys_pressed:
             running = False
         # Reading Mouse Input
@@ -200,7 +229,6 @@ while running:
     screen.fill((5, 5, 10))
     screen.blit(background, (0, -200))
 
-
     if len(list(barracks.keys())) < 9:
         pick = open('Basic')
         before = pick
@@ -235,39 +263,10 @@ while running:
                 draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125)
                 draw_text(f"{pick.ATK} ATK", Fonts['helv15b'], Colors['red'], pos[0] + 90, pos[1] + 125)
 
-        if K_1 in keys_pressed:
-            keys_pressed.remove(K_1)
-            frontline = band[:, 0]
-
-        if K_2 in keys_pressed:
-            keys_pressed.remove(K_2)
-            frontline = band[:, 1]
-
-        if K_3 in keys_pressed:
-            keys_pressed.remove(K_3)
-            frontline = band[:, 2]
-
-        if K_4 in keys_pressed:
-            keys_pressed.remove(K_4)
-            frontline = band[0]
-
-        if K_5 in keys_pressed:
-            keys_pressed.remove(K_5)
-            frontline = band[1]
-
-        if K_6 in keys_pressed:
-            keys_pressed.remove(K_6)
-            frontline = band[2]
-
-        if K_7 in keys_pressed:
-            keys_pressed.remove(K_7)
-            for n in range(3):
-                frontline[n] = band[n][n]
-
-        if K_8 in keys_pressed:
-            keys_pressed.remove(K_8)
-            for n in range(3):
-                frontline[n] = band[2-n][n]
+        if frontline[0] != 0:
+            attack_order[queue] = frontline
+            frontline = [0, 0, 0]
+            queue += 1
 
     pygame.display.update()
     dt = clock.tick(framerate) / 1000	# Makes movement or time-related events work independent of framerate
