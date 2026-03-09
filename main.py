@@ -315,6 +315,10 @@ while running:
             z = ['Uncommon', 10] * 5
         if build_voxite:
             z = [['Uncommon', 10]] * 5 + [['Rare', 20]] * 3
+        if build_doxite:
+            z = [['Uncommon', 10]] * 5 + [['Rare', 20]] * 3 + [['Epic', 30]] * 2
+        if build_texite:
+            z = [['Uncommon', 10]] * 5 + [['Rare', 20]] * 3 + [['Epic', 30]] * 2 + [['Legendary', 50]]
         for n in range(len(z)):
             z_n = z[n]
             pick = open(z_n[0])
