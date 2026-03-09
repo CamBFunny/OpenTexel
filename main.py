@@ -283,33 +283,55 @@ while running:
     screen.fill((5, 5, 10))
     screen.blit(background, (0, -200))
 
-    if build_state:
-        if build_pixite:
-            for n in range(5):
-                pick = open('Uncommon')
-                before = pick
-                while pick in barracks.keys():
-                    p = 1
-                    pick = f"{pick}-{p}"
-                    p += 1
-                barracks[pick] = Fighter(before)
-                barracks[pick].ATK = random.choice(range(1, 10))
-                barracks[pick].DEF = random.choice(range(1, 10))
-                barracks[pick].WIS = random.choice(range(1, 10))
-                barracks[pick].AGI = random.choice(range(1, 10))
-                Portrait[before] = image(before)
-
-    if menu_state:
+    if main_menu:
         if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['journey'], 1).draw():
             journey_menu = True
         if Button(200, SCREEN_SIZE[1] - 50, Icon['build'], 1).draw():
             build_menu = True
 
     if journey_menu:
-        menu_state = False
+        main_menu = False
         if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['begin'], 1).draw():
             journey_start = True
             
+    if build_menu:
+        main_menu = False
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-pixite'], 1).draw():
+            build_state = True
+            build_pixite = True
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-voxite'], 1).draw():
+            build_state = True
+            build_pixite = True
+            build_voxite = True
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-doxite'], 1).draw():
+            build_state = True
+            build_doxite = True
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-texite'], 1).draw():
+            build_state = True
+            build_texite = True
+            
+    if build_state:
+        if build_pixite:
+            z = ['Uncommon', 10] * 5
+        if build_voxite:
+            z = [['Uncommon', 10]] * 5 + [['Rare', 20]] * 3
+        for n in range(len(z)):
+            z_n = z[n]
+            pick = open(z_n[0])
+            before = pick
+            while pick in barracks.keys():
+                p = 1
+                pick = f"{pick}-{p}"
+                p += 1
+            barracks[pick] = Fighter(before)
+            barracks[pick].HP = random.choice(range(1, z_n[1]))
+            barracks[pick].ATK = random.choice(range(1, z_n[1]))
+            barracks[pick].DEF = random.choice(range(1, z_n[1]))
+            barracks[pick].WIS = random.choice(range(1, 10))
+            barracks[pick].AGI = random.choice(range(1, 10))
+            Portrait[before] = image(before)
+
+    
     if Button(50, 50, Icon['fight'], 1).draw():
         fight_start = True
         
