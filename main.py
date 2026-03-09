@@ -72,6 +72,7 @@ empty = Fighter('-')
 
 band = np.array([[empty,] * 3]*3)
 band_pos = np.array([[[0]*2] * 3]*3)
+hp_band = np.array([[0,] * 3]*3)
 space = 160
 bx = 100
 by = 200
@@ -132,10 +133,16 @@ def swipe(pressed):
             tmp[n] = band[2 - n][n]
         return tmp
 
+# Images
 background = pygame.image.load(f"lib/images/background.png")
 sz = background.get_size()
 scl = SCREEN_SIZE[0] / sz[0]
 background = pygame.transform.scale(background, (sz[0] * scl, sz[1] * scl))
+
+Icon = {}
+list = ['fight', 'journey', 'build', 'begin']
+for n in list:
+    Icon[n] = pygame.image.load(f"lib/images/{n}.png")
 
 # ODS Import code
 file_path = 'db_texel.ods'
@@ -150,6 +157,7 @@ for n in range(db_columns):
 
 fighters = list(fighter_dict.keys())
 num_fighters = len(fighters)
+common_pack = ['Fodder'] * 90 + ['Ikkupi'] * 6 + ['Banunu'] * 3 + ['Sirsir'] * 1
 uncommon_pack = []
 rare_pack = []
 epic_pack = []
@@ -201,14 +209,16 @@ class Button():    # Function for clickable buttons on screen
 
 def colorize(photo, newColor):
     photo = photo.copy()
-    photo.fill((0, 0, 0, 110), None, pygame.BLEND_RGBA_MULT)
+    photo.fill((0, 0, 0, 100), None, pygame.BLEND_RGBA_MULT)
     photo.fill(newColor[0:3] + (0,), None, pygame.BLEND_RGBA_ADD)
 
     return photo
 
 
 def open(box):
-    if box == 'Uncommon':
+    if box == 'Common':
+        value = random.choice(common_pack)
+    elif box == 'Uncommon':
         value = random.choice(uncommon_pack)
     elif box == 'Rare':
         value = random.choice(rare_pack)
@@ -225,6 +235,7 @@ fight = False
 strike = False
 strike_hold = False
 spawn_state = True
+fight_start = False
 
 while running:
     # CONTROLS
@@ -276,21 +287,82 @@ while running:
     screen.fill((5, 5, 10))
     screen.blit(background, (0, -200))
 
-    if len(list(barracks.keys())) < 9:
-        pick = open('Uncommon')
-        before = pick
-        while pick in barracks.keys():
-            p = 1
-            pick = f"{pick}-{p}"
-            p += 1
-        barracks[pick] = Fighter(before)
-        barracks[pick].ATK = random.choice(range(1, 10))
-        barracks[pick].DEF = random.choice(range(1, 10))
-        barracks[pick].WIS = random.choice(range(1, 10))
-        barracks[pick].AGI = random.choice(range(1, 10))
-        Portrait[before] = image(before)
-    elif not fight:
+    if main_menu:
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['journey'], 1).draw():
+            journey_menu = True
+        if Button(200, SCREEN_SIZE[1] - 50, Icon['build'], 1).draw():
+            build_menu = True
+
+    if journey_menu:
+        main_menu = False
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['begin'], 1).draw():
+            journey_state = True
+            journey_timer = 0
+            num_fights = random.choice(range(1, 4))
+            
+    if build_menu:
+        main_menu = False
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-pixite'], 1).draw():
+            build_state = True
+            build_pixite = True
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-voxite'], 1).draw():
+            build_state = True
+            build_pixite = True
+            build_voxite = True
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-doxite'], 1).draw():
+            build_state = True
+            build_doxite = True
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-texite'], 1).draw():
+            build_state = True
+            build_texite = True
+            
+    if build_state:
+        if build_pixite:
+            z = ['Uncommon', 10, 5] * 5 + ['Common', 1, 1] * 3
+        if build_voxite:
+            z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3
+        if build_doxite:
+            z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2
+        if build_texite:
+            z = [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2 + [['Legendary', 50, 25]]
+        for n in range(len(z)):
+            z_n = z[n]
+            pick = open(z_n[0])
+            before = pick
+            while pick in barracks.keys():
+                p = 1
+                pick = f"{pick}-{p}"
+                p += 1
+            barracks[pick] = Fighter(before)
+            barracks[pick].HP = random.choice(range(1, z_n[1]+1))
+            barracks[pick].ATK = random.choice(range(1, z_n[1]+1))
+            barracks[pick].DEF = random.choice(range(1, z_n[1]+1))
+            barracks[pick].WIS = random.choice(range(1, z_n[2]+1))
+            barracks[pick].AGI = random.choice(range(1, z_n[2]+1))
+            Portrait[before] = image(before)
+
+    if journey_state:
+        # Draw journey background
+        if not encounter:
+            journey_timer += dt
+            if journey_timer >= (3 / num_fights + random.choice(0, 10) / 10):
+                encounter = True
+                enemy_power = 0
+                for x in range(3):
+                    pick = open('Uncommon')
+                    enemies[x] = Fighter(pick)
+                    Portrait[pick] = image(pick)
+                    enemies[x].HP = random.choice(range(30, 100))
+                    enemies[x].ATK = random.choice(range(1, 10))
+                    enemy_power += enemies[x].ATK
+        if encounter and not fight:
+            # Draw enemies
+            if Button(50, 50, Icon['fight'], 1).draw():
+                fight_start = True 
+        
+    if fight_start:
         fight = True
+        fight_start = False
         overkill = 0
         spawn_state = True
         # Temporary band setup, remove once menus work
@@ -311,13 +383,16 @@ while running:
                 villain = Portrait[enemies[x].name]
                 villain = pygame.transform.flip(villain, True, False)
                 enemy_portrait = colorize(villain, Colors['red'])
-                draw_text(f"{enemy_hp} HP", Fonts['helv30b'], Colors['red'],
-                          enemies_pos[0][0] + 15 * (3 - q), 220 + space * x)
+                rectangle = pygame.Rect(enemies_pos[0][0], 220 + space * x, 100, 15)
+                pygame.draw.rect(screen, Colors['red'], rectangle)
+                draw_text(f"{enemy_hp} HP", Fonts['helv10'], Colors['white'],
+                          enemies_pos[0][0] + 3, 223 + space * x)
                 screen.blit(villain, enemies_pos[x])
                 screen.blit(enemy_portrait, enemies_pos[x])
             for y in range(3):
                 pick = band[x][y]
                 pos = band_pos[x][y]
+                hp_band[x][y] = pick.HP
                 screen.blit(Portrait[pick.name], pos)
                 draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125)
                 draw_text(f"{pick.ATK} ATK", Fonts['helv15b'], Colors['red'], pos[0] + 90, pos[1] + 125)
@@ -327,15 +402,14 @@ while running:
             total_health[n] = enemies[n].HP
 
         if np.sum(total_health) == 0:
-            spawn_state = True
+            victory = True
+            victory_time = 0
 
-        if spawn_state:
-            for x in range(3):
-                pick = open('Uncommon')
-                enemies[x] = Fighter(pick)
-                Portrait[pick] = image(pick)
-                enemies[x].HP = random.choice(range(30, 100))
-            spawn_state = False
+        if victory:
+            victory_time += dt
+            if victory_time >= 3:
+                encounter = False 
+                fight = False
 
         # Swipe selections
         swipe_colors = [Colors['yellow'], Colors['orange'], Colors['red']]
@@ -384,9 +458,10 @@ while running:
         if frontline[0] != 0:
             attack_order[queue] = frontline
             frontline = [0, 0, 0]
+            damage = [0, 0, 0]
             queue += 1
 
-        if queue == 3:
+        if queue == 3:    # Attack animations
             power = 0
             t1 = 0.6
             t2 = 0.82
@@ -397,6 +472,8 @@ while running:
             elif t2 < attack_timer <= t3:
                 strike = True
                 xx = front_pos[0] + (t2 - t1) * speed - (attack_timer-t2) * 400
+                for j in range(3):
+                    draw_text(f"-{damage[j]}", Fonts['helv30b'], Colors['orange'], enemies_pos[0][0] - 20, enemies_pos[0][1] + space * j
                 if xx < front_pos[0]:
                     xx = front_pos[0]
             else:
@@ -411,7 +488,8 @@ while running:
                     crit_chance = 100
                     if 1 == random.choice(range(crit_chance)):
                         modifier = 10
-                    enemies[j].HP -= power * modifier
+                    damage[j] = power * modifier
+                    enemies[j].HP -= damage[j]
                     if enemies[j].HP < 0:
                         overkill -= enemies[j].HP
                         enemies[j].HP = 0
@@ -425,6 +503,12 @@ while running:
             else:
                 attack_timer += dt
             if attack_counter == 3:
+                enemy_attack = True
+            if enemy_attack and attack_timer > t1:
+                hp_band -= enemy_power
+                enemy_attack = False
+                enemy_done - True
+            elif enemy_done and attack_timer > t3:
                 queue = 0
                 attack_counter = 0
                 attack_order = {}
