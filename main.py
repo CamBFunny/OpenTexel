@@ -4,6 +4,7 @@ import time
 import numpy as np
 import os
 import random
+import pandas as pd
 import inspect
 import asyncio
 import math
@@ -19,7 +20,7 @@ from pygame.locals import (KEYDOWN, QUIT, KEYUP, K_LCTRL,
 
 # Screen settings
 resolution = 1             # Set window size; 16:9 ratio .8-720p .6-540p .5~480p
-SCREEN_SIZE = [int(1440 * resolution), int(900 * resolution)]
+SCREEN_SIZE = [int(1280 * resolution), int(800 * resolution)]
 screen = pygame.display.set_mode([SCREEN_SIZE[0], SCREEN_SIZE[1]])
 
 running = True
@@ -37,7 +38,7 @@ frame_counter = 0
 mouse_pos = pygame.mouse.get_pos()
 
 Fonts = {}
-fsizes = [10, 15, 20, 23, 25, 30, 37, 40, 55]
+fsizes = range(10, 70, 5)
 
 # Fonts
 for i in fsizes:
@@ -71,9 +72,9 @@ empty = Fighter('-')
 
 band = np.array([[empty,] * 3]*3)
 band_pos = np.array([[[0]*2] * 3]*3)
-space = 150
-bx = 150
-by = 300
+space = 160
+bx = 100
+by = 200
 enemies_pos = np.array([[0]*2] * 3)
 for x in range(3):
     enemies_pos[x] = [SCREEN_SIZE[0] - 350, by + 30 + space * x]
@@ -93,7 +94,7 @@ attack_order = {}
 queue = 0
 attack_counter = 0
 attack_timer = 0
-block_swipe = {0,}
+swipe_order = [0,]
 
 # // FUNCTIONS //
 def draw_text(text, font, text_col, x, y):  # Function for outputting text onto the screen
@@ -136,21 +137,33 @@ sz = background.get_size()
 scl = SCREEN_SIZE[0] / sz[0]
 background = pygame.transform.scale(background, (sz[0] * scl, sz[1] * scl))
 
-def open(box):
-    if box == 'Basic':
-        value = random.choice(roster)
+# ODS Import code
+file_path = 'db_texel.ods'
+db_fighters = pd.read_excel(file_path, engine='odf', sheet_name=1) # Import sheet 2
+db_rows = db_fighters.index.size
+db_columns = db_fighters.columns.size
+Fighters = {}
 
-    return value
+for n in range(db_columns):
+    if n % 4 != 0:
+        Fighters[db_fighters.columns[n]] = db_fighters.iloc[0, n]
 
-fighters = os.listdir('lib/fighters/')
+fighters = list(Fighters.keys())
 num_fighters = len(fighters)
-roster = {}
+uncommon_pack = []
+rare_pack = []
+epic_pack = []
+legendary_pack = []
 for n in range(num_fighters):
-    sz = len(fighters[n])
-    for m in range(sz):
-        if fighters[n][m] == '_':
-            end = m
-    roster[n] = fighters[n][0:end]
+    name = fighters[n]
+    if Fighters[name] == 'Uncommon':
+        uncommon_pack = list(uncommon_pack) + [name]
+    elif Fighters[name] == 'Rare':
+        rare_pack = list(rare_pack) + [name]
+    elif Fighters[name] == 'Epic':
+        epic_pack = list(epic_pack) + [name]
+    elif Fighters[name] == 'Legendary':
+        legendary_pack = list(legendary_pack) + [name]
 
 class Button():    # Function for clickable buttons on screen
     def __init__(self, x, y, image, scale):
@@ -185,19 +198,42 @@ class Button():    # Function for clickable buttons on screen
 
         return action
 
+
+def open(box):
+    if box == 'Uncommon':
+        value = random.choice(uncommon_pack)
+    elif box == 'Rare':
+        value = random.choice(rare_pack)
+    elif box == 'Epic':
+        value = random.choice(epic_pack)
+    elif box == 'Legendary':
+        value = random.choice(legendary_pack)
+
+    return value
+
 LeftHold = False
 LeftClick = False
 fight = False
+strike = False
+strike_hold = False
 
-while running: 
+def colorize(photo, newColor):
+    photo = photo.copy()
+    photo.fill((0, 0, 0, 110), None, pygame.BLEND_RGBA_MULT)
+    photo.fill(newColor[0:3] + (0,), None, pygame.BLEND_RGBA_ADD)
+
+    return photo
+
+while running:
     # CONTROLS
     for event in pygame.event.get():
         # Reading Keyboard Input
         if event.type == KEYDOWN:
             keys_pressed.add(event.key)
-            if event.key in swipe_list and event.key not in block_swipe:
-                frontline = swipe(event.key)
-                block_swipe.add(event.key)
+            if len(swipe_order) <= 3:
+                if event.key in swipe_list and event.key not in swipe_order:
+                    frontline = swipe(event.key)
+                    swipe_order = list(swipe_order) + [event.key]
         if event.type == pygame.QUIT or K_ESCAPE in keys_pressed:
             running = False
         # Reading Mouse Input
@@ -239,7 +275,7 @@ while running:
     screen.blit(background, (0, -200))
 
     if len(list(barracks.keys())) < 9:
-        pick = open('Basic')
+        pick = open('Uncommon')
         before = pick
         while pick in barracks.keys():
             p = 1
@@ -254,7 +290,7 @@ while running:
     elif not fight:
         fight = True
         enemy_health = 100
-        strike = True
+        overkill = 0
         # Temporary band setup, remove once menus work
         xyz = list(barracks)
         for x in range(3):
@@ -264,18 +300,66 @@ while running:
                 band[x][y] = barracks[xyz[index]] # Automatically assign band fighter
 
     if fight:
-        draw_text(f"Enemy: {enemy_health} HP", Fonts['helv40b'], Colors['red'], 1020, 220)
-        s = pygame.Surface((520, 515), pygame.SRCALPHA)  # per-pixel alpha
-        s.fill((25, 25, 25, 100))  # notice the alpha value in the color
+        draw_text(f"{enemy_health} HP", Fonts['helv50b'], Colors['red'], 1085, 220)
+        s = pygame.Surface((540, 545), pygame.SRCALPHA)
+        s.fill((25, 25, 25, 100))
         screen.blit(s, (bx, by))
         for x in range(3):
-            screen.blit(Portrait[enemies[x].name], enemies_pos[x])
+            villain = Portrait[enemies[x].name]
+            villain = pygame.transform.flip(villain, True, False)
+            enemy_portrait = colorize(villain, Colors['red'])
+            screen.blit(villain, enemies_pos[x])
+            screen.blit(enemy_portrait, enemies_pos[x])
             for y in range(3):
                 pick = band[x][y]
                 pos = band_pos[x][y]
                 screen.blit(Portrait[pick.name], pos)
                 draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125)
                 draw_text(f"{pick.ATK} ATK", Fonts['helv15b'], Colors['red'], pos[0] + 90, pos[1] + 125)
+
+        # Swipe selections
+        swipe_colors = [Colors['yellow'], Colors['orange'], Colors['red']]
+        for x in range(len(swipe_order)-1):
+            rectangle = pygame.Rect(-50, -50, 10, 10)
+            index = x+1
+            if list(swipe_order)[index] == K_1:
+                rx = band_pos[0][0][0]
+                ry = band_pos[0][0][1]
+                rectangle = pygame.Rect(rx - 5, ry - 15, space + 5, space * 3 + 15)
+            elif list(swipe_order)[index] == K_2:
+                rx = band_pos[1][0][0]
+                ry = band_pos[1][0][1]
+                rectangle = pygame.Rect(rx - 5, ry - 15, space + 5, space * 3 + 15)
+            elif list(swipe_order)[index] == K_3:
+                rx = band_pos[2][0][0]
+                ry = band_pos[2][0][1]
+                rectangle = pygame.Rect(rx - 5, ry - 15, space + 5, space * 3 + 15)
+            elif list(swipe_order)[index] == K_4:
+                rx = band_pos[0][0][0]
+                ry = band_pos[0][0][1]
+                rectangle = pygame.Rect(rx-10, ry-10, space * 3 + 20, space + 5)
+            elif list(swipe_order)[index] == K_5:
+                rx = band_pos[0][1][0]
+                ry = band_pos[0][1][1]
+                rectangle = pygame.Rect(rx-10, ry-10, space * 3 + 20, space + 5)
+            elif list(swipe_order)[index] == K_6:
+                rx = band_pos[0][2][0]
+                ry = band_pos[0][2][1]
+                rectangle = pygame.Rect(rx-10, ry-10, space * 3 + 20, space + 5)
+            elif list(swipe_order)[index] == K_7:
+                rx = band_pos[0][0][0]
+                ry = band_pos[0][0][1] + 10
+                vertices = [(rx-35, ry+space/2), (rx + space/2, ry - 35),
+                            (rx + space*3.2, ry + space*2.5), (rx + space*2.5, ry + space*3.2)]
+                pygame.draw.polygon(screen, swipe_colors[x], vertices, 4)  # Draw the polygon
+            elif list(swipe_order)[index] == K_8:
+                rx = band_pos[2][0][0] + space - 4
+                ry = band_pos[2][0][1] + 8
+                vertices = [(rx + 35, ry + space / 2), (rx - space / 2, ry - 35),
+                            (rx - space * 3.2, ry + space * 2.5), (rx - space * 2.5, ry + space * 3.2)]
+                pygame.draw.polygon(screen, swipe_colors[x], vertices, 4)  # Draw the polygon
+
+            pygame.draw.rect(screen, swipe_colors[x], rectangle, 4)
 
         if frontline[0] != 0:
             attack_order[queue] = frontline
@@ -284,24 +368,42 @@ while running:
 
         if queue == 3:
             power = 0
+            t1 = 0.6
+            t2 = 0.82
+            t3 = 1.6
+            speed = 1300
+            if t1 < attack_timer <= t2:
+                xx = front_pos[0] + (attack_timer-t1) * speed
+            elif t2 < attack_timer <= t3:
+                strike = True
+                xx = front_pos[0] + (t2 - t1) * speed - (attack_timer-t2) * 400
+                if xx < front_pos[0]:
+                    xx = front_pos[0]
+            else:
+                xx = front_pos[0]
             for y in range(3):
                 k = attack_counter
-                screen.blit(Portrait[attack_order[k][y].name], (front_pos[0], front_pos[1] + 150*y))
+                screen.blit(Portrait[attack_order[k][y].name], (xx, front_pos[1] + space*y))
                 power += attack_order[k][y].ATK
-            if strike:
+            if strike and not strike_hold:
                 enemy_health -= power
+                if enemy_health < 0:
+                    overkill -= enemy_health
+                    enemy_health = 0
+                strike_hold = True
                 strike = False
             if attack_timer >= 2:
                 attack_counter += 1
                 attack_timer = 0
-                strike = True
+                strike_hold = False
+                strike = False
             else:
                 attack_timer += dt
             if attack_counter == 3:
                 queue = 0
                 attack_counter = 0
                 attack_order = {}
-                block_swipe = {0,}
+                swipe_order = [0,]
 
     pygame.display.update()
     dt = clock.tick(framerate) / 1000	# Makes movement or time-related events work independent of framerate
