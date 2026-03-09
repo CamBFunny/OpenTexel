@@ -132,10 +132,16 @@ def swipe(pressed):
             tmp[n] = band[2 - n][n]
         return tmp
 
+# Images
 background = pygame.image.load(f"lib/images/background.png")
 sz = background.get_size()
 scl = SCREEN_SIZE[0] / sz[0]
 background = pygame.transform.scale(background, (sz[0] * scl, sz[1] * scl))
+
+Icon = {}
+list = ['fight']
+for n in list:
+    Icon[n] = pygame.image.load(f"lib/images/{n}.png")
 
 # ODS Import code
 file_path = 'db_texel.ods'
@@ -225,6 +231,7 @@ fight = False
 strike = False
 strike_hold = False
 spawn_state = True
+fight_start = False
 
 while running:
     # CONTROLS
@@ -289,8 +296,13 @@ while running:
         barracks[pick].WIS = random.choice(range(1, 10))
         barracks[pick].AGI = random.choice(range(1, 10))
         Portrait[before] = image(before)
-    elif not fight:
+    
+    if Button(50, 50, Icon['fight'], 1).draw():
+        fight_start = True
+        
+    if fight_start:
         fight = True
+        fight_start = False
         overkill = 0
         spawn_state = True
         # Temporary band setup, remove once menus work
