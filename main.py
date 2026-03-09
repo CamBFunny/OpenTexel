@@ -312,16 +312,19 @@ while running:
             
     if build_state:
         if build_pixite:
-            z = ['Uncommon', 10] * 5
+            z = ['Uncommon', 10, 5] * 5
         if build_voxite:
-            z = [['Uncommon', 10]] * 5 + [['Rare', 20]] * 3
+            z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3
         if build_doxite:
-            z = [['Uncommon', 10]] * 5 + [['Rare', 20]] * 3 + [['Epic', 30]] * 2
+            z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2
         if build_texite:
-            z = [['Uncommon', 10]] * 5 + [['Rare', 20]] * 3 + [['Epic', 30]] * 2 + [['Legendary', 50]]
+            z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2 + [['Legendary', 50, 25]]
         for n in range(len(z)):
             z_n = z[n]
             pick = open(z_n[0])
+            if pick == 'Fodder':
+                z_n[1] = 2    # Makes all values 1
+                z_n[2] = 2
             before = pick
             while pick in barracks.keys():
                 p = 1
@@ -331,8 +334,8 @@ while running:
             barracks[pick].HP = random.choice(range(1, z_n[1]))
             barracks[pick].ATK = random.choice(range(1, z_n[1]))
             barracks[pick].DEF = random.choice(range(1, z_n[1]))
-            barracks[pick].WIS = random.choice(range(1, 10))
-            barracks[pick].AGI = random.choice(range(1, 10))
+            barracks[pick].WIS = random.choice(range(1, z_n[2]))
+            barracks[pick].AGI = random.choice(range(1, z_n[2]))
             Portrait[before] = image(before)
 
     
