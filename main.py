@@ -214,7 +214,9 @@ def colorize(photo, newColor):
 
 
 def open(box):
-    if box == 'Uncommon':
+    if box == 'Common':
+        value = random.choice(['Fodder'] * 90 + ['Bronze Fodder'] * 6 + ['Silver Fodder'] * 3 + ['Gold Fodder'] * 1)
+    elif box == 'Uncommon':
         value = random.choice(uncommon_pack)
     elif box == 'Rare':
         value = random.choice(rare_pack)
@@ -312,32 +314,31 @@ while running:
             
     if build_state:
         if build_pixite:
-            z = ['Uncommon', 10, 5] * 5
+            z = ['Uncommon', 10, 5] * 5 + ['Common', 5, 3] * 3
         if build_voxite:
             z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3
         if build_doxite:
             z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2
         if build_texite:
-            z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2 + [['Legendary', 50, 25]]
+            z = [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2 + [['Legendary', 50, 25]]
         for n in range(len(z)):
             z_n = z[n]
             pick = open(z_n[0])
             if pick == 'Fodder':
-                z_n[1] = 2    # Makes all values 1
-                z_n[2] = 2
+                z_n[1] = 1    # Makes all values 1
+                z_n[2] = 1
             before = pick
             while pick in barracks.keys():
                 p = 1
                 pick = f"{pick}-{p}"
                 p += 1
             barracks[pick] = Fighter(before)
-            barracks[pick].HP = random.choice(range(1, z_n[1]))
-            barracks[pick].ATK = random.choice(range(1, z_n[1]))
-            barracks[pick].DEF = random.choice(range(1, z_n[1]))
-            barracks[pick].WIS = random.choice(range(1, z_n[2]))
-            barracks[pick].AGI = random.choice(range(1, z_n[2]))
+            barracks[pick].HP = random.choice(range(1, z_n[1]+1))
+            barracks[pick].ATK = random.choice(range(1, z_n[1]+1))
+            barracks[pick].DEF = random.choice(range(1, z_n[1]+1))
+            barracks[pick].WIS = random.choice(range(1, z_n[2]+1))
+            barracks[pick].AGI = random.choice(range(1, z_n[2]+1))
             Portrait[before] = image(before)
-
     
     if Button(50, 50, Icon['fight'], 1).draw():
         fight_start = True
