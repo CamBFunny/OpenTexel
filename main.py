@@ -72,6 +72,7 @@ empty = Fighter('-')
 
 band = np.array([[empty,] * 3]*3)
 band_pos = np.array([[[0]*2] * 3]*3)
+hp_band = np.array([[0,] * 3]*3)
 space = 160
 bx = 100
 by = 200
@@ -373,6 +374,7 @@ while running:
             for y in range(3):
                 pick = band[x][y]
                 pos = band_pos[x][y]
+                hp_band[x][y] = pick.HP
                 screen.blit(Portrait[pick.name], pos)
                 draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125)
                 draw_text(f"{pick.ATK} ATK", Fonts['helv15b'], Colors['red'], pos[0] + 90, pos[1] + 125)
@@ -385,11 +387,14 @@ while running:
             spawn_state = True
 
         if spawn_state:
+            enemy_power = 0
             for x in range(3):
                 pick = open('Uncommon')
                 enemies[x] = Fighter(pick)
                 Portrait[pick] = image(pick)
                 enemies[x].HP = random.choice(range(30, 100))
+                enemies[x].ATK = random.choice(range(1, 10))
+                enemy_power += enemies[x].ATK
             spawn_state = False
 
         # Swipe selections
@@ -484,6 +489,12 @@ while running:
             else:
                 attack_timer += dt
             if attack_counter == 3:
+                enemy_attack = True
+            if enemy_attack and attack_timer > t1:
+                hp_band -= enemy_power
+                enemy_attack = False
+                enemy_done - True
+            elif enemy_done and attack_timer > t3:
                 queue = 0
                 attack_counter = 0
                 attack_order = {}
