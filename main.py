@@ -296,7 +296,7 @@ while running:
     if journey_menu:
         main_menu = False
         if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['begin'], 1).draw():
-            journey_start = True
+            journey_state = True
             journey_timer = 0
             num_fights = random.choice(range(1, 4))
             
@@ -341,24 +341,24 @@ while running:
             barracks[pick].AGI = random.choice(range(1, z_n[2]+1))
             Portrait[before] = image(before)
 
-    if journey_start:
+    if journey_state:
         # Draw journey background
         if not encounter:
             journey_timer += dt
-        if journey_timer >= (3 / num_fights + random.choice(0, 10) / 10):
-            encounter = True
-            enemy_power = 0
-            for x in range(3):
-                pick = open('Uncommon')
-                enemies[x] = Fighter(pick)
-                Portrait[pick] = image(pick)
-                enemies[x].HP = random.choice(range(30, 100))
-                enemies[x].ATK = random.choice(range(1, 10))
-                enemy_power += enemies[x].ATK
-        if encounter:
+            if journey_timer >= (3 / num_fights + random.choice(0, 10) / 10):
+                encounter = True
+                enemy_power = 0
+                for x in range(3):
+                    pick = open('Uncommon')
+                    enemies[x] = Fighter(pick)
+                    Portrait[pick] = image(pick)
+                    enemies[x].HP = random.choice(range(30, 100))
+                    enemies[x].ATK = random.choice(range(1, 10))
+                    enemy_power += enemies[x].ATK
+        if encounter and not fight:
             # Draw enemies
             if Button(50, 50, Icon['fight'], 1).draw():
-                fight_start = True
+                fight_start = True 
         
     if fight_start:
         fight = True
@@ -402,7 +402,14 @@ while running:
             total_health[n] = enemies[n].HP
 
         if np.sum(total_health) == 0:
-            spawn_state = True 
+            victory = True
+            victory_time = 0
+
+        if victory:
+            victory_time += dt
+            if victory_time >= 3:
+                encounter = False 
+                fight = False
 
         # Swipe selections
         swipe_colors = [Colors['yellow'], Colors['orange'], Colors['red']]
