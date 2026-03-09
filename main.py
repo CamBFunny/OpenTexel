@@ -156,6 +156,7 @@ for n in range(db_columns):
 
 fighters = list(fighter_dict.keys())
 num_fighters = len(fighters)
+common_pack = ['Fodder'] * 90 + ['Bronze Fodder'] * 6 + ['Silver Fodder'] * 3 + ['Gold Fodder'] * 1
 uncommon_pack = []
 rare_pack = []
 epic_pack = []
@@ -207,7 +208,7 @@ class Button():    # Function for clickable buttons on screen
 
 def colorize(photo, newColor):
     photo = photo.copy()
-    photo.fill((0, 0, 0, 110), None, pygame.BLEND_RGBA_MULT)
+    photo.fill((0, 0, 0, 100), None, pygame.BLEND_RGBA_MULT)
     photo.fill(newColor[0:3] + (0,), None, pygame.BLEND_RGBA_ADD)
 
     return photo
@@ -215,7 +216,7 @@ def colorize(photo, newColor):
 
 def open(box):
     if box == 'Common':
-        value = random.choice(['Fodder'] * 90 + ['Bronze Fodder'] * 6 + ['Silver Fodder'] * 3 + ['Gold Fodder'] * 1)
+        value = random.choice(common_pack)
     elif box == 'Uncommon':
         value = random.choice(uncommon_pack)
     elif box == 'Rare':
