@@ -439,9 +439,10 @@ while running:
         if frontline[0] != 0:
             attack_order[queue] = frontline
             frontline = [0, 0, 0]
+            damage = [0, 0, 0]
             queue += 1
 
-        if queue == 3:
+        if queue == 3:    # Attack animations
             power = 0
             t1 = 0.6
             t2 = 0.82
@@ -452,6 +453,8 @@ while running:
             elif t2 < attack_timer <= t3:
                 strike = True
                 xx = front_pos[0] + (t2 - t1) * speed - (attack_timer-t2) * 400
+                for j in range(3):
+                    draw_text(f"-{damage[j]}", Fonts['helv30b'], Colors['orange'], enemies_pos[0][0] - 20, enemies_pos[0][1] + space * j
                 if xx < front_pos[0]:
                     xx = front_pos[0]
             else:
@@ -466,7 +469,8 @@ while running:
                     crit_chance = 100
                     if 1 == random.choice(range(crit_chance)):
                         modifier = 10
-                    enemies[j].HP -= power * modifier
+                    damage[j] = power * modifier
+                    enemies[j].HP -= damage[j]
                     if enemies[j].HP < 0:
                         overkill -= enemies[j].HP
                         enemies[j].HP = 0
