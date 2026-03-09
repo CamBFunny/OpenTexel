@@ -311,7 +311,9 @@ while running:
                 villain = Portrait[enemies[x].name]
                 villain = pygame.transform.flip(villain, True, False)
                 enemy_portrait = colorize(villain, Colors['red'])
-                draw_text(f"{enemy_hp} HP", Fonts['helv30b'], Colors['red'],
+                rectangle = pygame.Rect(enemies_pos[0][0] + 15 * (3 - 1), 220 + space * x, 100, 10)
+                pygame.draw.rect(screen, Colors['red'], rectangle)
+                draw_text(f"{enemy_hp} HP", Fonts['helv10b'], Colors['white'],
                           enemies_pos[0][0] + 15 * (3 - q), 220 + space * x)
                 screen.blit(villain, enemies_pos[x])
                 screen.blit(enemy_portrait, enemies_pos[x])
