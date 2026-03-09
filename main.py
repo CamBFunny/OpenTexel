@@ -77,7 +77,7 @@ bx = 100
 by = 200
 enemies_pos = np.array([[0]*2] * 3)
 for x in range(3):
-    enemies_pos[x] = [SCREEN_SIZE[0] - 350, by + 30 + space * x]
+    enemies_pos[x] = [SCREEN_SIZE[0] - 300, by + 30 + space * x]
     for y in range(3):
         xx = bx + 30 + space * x
         yy = by + 30 + space * y
@@ -142,13 +142,13 @@ file_path = 'db_texel.ods'
 db_fighters = pd.read_excel(file_path, engine='odf', sheet_name=1) # Import sheet 2
 db_rows = db_fighters.index.size
 db_columns = db_fighters.columns.size
-Fighters = {}
+fighter_dict = {}
 
 for n in range(db_columns):
     if n % 4 != 0:
-        Fighters[db_fighters.columns[n]] = db_fighters.iloc[0, n]
+        fighter_dict[db_fighters.columns[n]] = db_fighters.iloc[0, n]
 
-fighters = list(Fighters.keys())
+fighters = list(fighter_dict.keys())
 num_fighters = len(fighters)
 uncommon_pack = []
 rare_pack = []
@@ -156,13 +156,13 @@ epic_pack = []
 legendary_pack = []
 for n in range(num_fighters):
     name = fighters[n]
-    if Fighters[name] == 'Uncommon':
+    if fighter_dict[name] == 'Uncommon':
         uncommon_pack = list(uncommon_pack) + [name]
-    elif Fighters[name] == 'Rare':
+    elif fighter_dict[name] == 'Rare':
         rare_pack = list(rare_pack) + [name]
-    elif Fighters[name] == 'Epic':
+    elif fighter_dict[name] == 'Epic':
         epic_pack = list(epic_pack) + [name]
-    elif Fighters[name] == 'Legendary':
+    elif fighter_dict[name] == 'Legendary':
         legendary_pack = list(legendary_pack) + [name]
 
 class Button():    # Function for clickable buttons on screen
@@ -199,6 +199,14 @@ class Button():    # Function for clickable buttons on screen
         return action
 
 
+def colorize(photo, newColor):
+    photo = photo.copy()
+    photo.fill((0, 0, 0, 110), None, pygame.BLEND_RGBA_MULT)
+    photo.fill(newColor[0:3] + (0,), None, pygame.BLEND_RGBA_ADD)
+
+    return photo
+
+
 def open(box):
     if box == 'Uncommon':
         value = random.choice(uncommon_pack)
@@ -216,13 +224,7 @@ LeftClick = False
 fight = False
 strike = False
 strike_hold = False
-
-def colorize(photo, newColor):
-    photo = photo.copy()
-    photo.fill((0, 0, 0, 110), None, pygame.BLEND_RGBA_MULT)
-    photo.fill(newColor[0:3] + (0,), None, pygame.BLEND_RGBA_ADD)
-
-    return photo
+spawn_state = True
 
 while running:
     # CONTROLS
@@ -289,33 +291,51 @@ while running:
         Portrait[before] = image(before)
     elif not fight:
         fight = True
-        enemy_health = 100
         overkill = 0
+        spawn_state = True
         # Temporary band setup, remove once menus work
         xyz = list(barracks)
         for x in range(3):
-            enemies[x] = barracks[xyz[x]]
             for y in range(3):
                 index = x * 3 + y
-                band[x][y] = barracks[xyz[index]] # Automatically assign band fighter
+                band[x][y] = barracks[xyz[index]] # Automatically assign band of fighter
 
     if fight:
-        draw_text(f"{enemy_health} HP", Fonts['helv50b'], Colors['red'], 1085, 220)
         s = pygame.Surface((540, 545), pygame.SRCALPHA)
         s.fill((25, 25, 25, 100))
         screen.blit(s, (bx, by))
         for x in range(3):
-            villain = Portrait[enemies[x].name]
-            villain = pygame.transform.flip(villain, True, False)
-            enemy_portrait = colorize(villain, Colors['red'])
-            screen.blit(villain, enemies_pos[x])
-            screen.blit(enemy_portrait, enemies_pos[x])
+            if enemies[x].HP > 0 and not spawn_state:
+                enemy_hp = enemies[x].HP
+                q = len(f"{enemy_hp}")
+                villain = Portrait[enemies[x].name]
+                villain = pygame.transform.flip(villain, True, False)
+                enemy_portrait = colorize(villain, Colors['red'])
+                draw_text(f"{enemy_hp} HP", Fonts['helv30b'], Colors['red'],
+                          enemies_pos[0][0] + 15 * (3 - q), 220 + space * x)
+                screen.blit(villain, enemies_pos[x])
+                screen.blit(enemy_portrait, enemies_pos[x])
             for y in range(3):
                 pick = band[x][y]
                 pos = band_pos[x][y]
                 screen.blit(Portrait[pick.name], pos)
                 draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125)
                 draw_text(f"{pick.ATK} ATK", Fonts['helv15b'], Colors['red'], pos[0] + 90, pos[1] + 125)
+
+        total_health = np.array([0, 0, 0])
+        for n in range(3):
+            total_health[n] = enemies[n].HP
+
+        if np.sum(total_health) == 0:
+            spawn_state = True
+
+        if spawn_state:
+            for x in range(3):
+                pick = open('Uncommon')
+                enemies[x] = Fighter(pick)
+                Portrait[pick] = image(pick)
+                enemies[x].HP = random.choice(range(30, 100))
+            spawn_state = False
 
         # Swipe selections
         swipe_colors = [Colors['yellow'], Colors['orange'], Colors['red']]
@@ -386,10 +406,15 @@ while running:
                 screen.blit(Portrait[attack_order[k][y].name], (xx, front_pos[1] + space*y))
                 power += attack_order[k][y].ATK
             if strike and not strike_hold:
-                enemy_health -= power
-                if enemy_health < 0:
-                    overkill -= enemy_health
-                    enemy_health = 0
+                for j in range(3):
+                    modifier = 1
+                    crit_chance = 100
+                    if 1 == random.choice(range(crit_chance)):
+                        modifier = 10
+                    enemies[j].HP -= power * modifier
+                    if enemies[j].HP < 0:
+                        overkill -= enemies[j].HP
+                        enemies[j].HP = 0
                 strike_hold = True
                 strike = False
             if attack_timer >= 2:
