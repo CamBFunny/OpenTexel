@@ -157,7 +157,7 @@ for n in range(db_columns):
 
 fighters = list(fighter_dict.keys())
 num_fighters = len(fighters)
-common_pack = ['Fodder'] * 90 + ['Bronze Fodder'] * 6 + ['Silver Fodder'] * 3 + ['Gold Fodder'] * 1
+common_pack = ['Fodder'] * 90 + ['Ikkupi'] * 6 + ['Banunu'] * 3 + ['Sirsir'] * 1
 uncommon_pack = []
 rare_pack = []
 epic_pack = []
