@@ -315,7 +315,7 @@ while running:
             
     if build_state:
         if build_pixite:
-            z = ['Uncommon', 10, 5] * 5 + ['Common', 5, 3] * 3
+            z = ['Uncommon', 10, 5] * 5 + ['Common', 1, 1] * 3
         if build_voxite:
             z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3
         if build_doxite:
@@ -325,9 +325,6 @@ while running:
         for n in range(len(z)):
             z_n = z[n]
             pick = open(z_n[0])
-            if pick == 'Fodder':
-                z_n[1] = 1    # Makes all values 1
-                z_n[2] = 1
             before = pick
             while pick in barracks.keys():
                 p = 1
