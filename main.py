@@ -139,7 +139,7 @@ scl = SCREEN_SIZE[0] / sz[0]
 background = pygame.transform.scale(background, (sz[0] * scl, sz[1] * scl))
 
 Icon = {}
-list = ['fight']
+list = ['fight', 'journey', 'build', 'begin']
 for n in list:
     Icon[n] = pygame.image.load(f"lib/images/{n}.png")
 
@@ -283,20 +283,33 @@ while running:
     screen.fill((5, 5, 10))
     screen.blit(background, (0, -200))
 
-    if len(list(barracks.keys())) < 9:
-        pick = open('Uncommon')
-        before = pick
-        while pick in barracks.keys():
-            p = 1
-            pick = f"{pick}-{p}"
-            p += 1
-        barracks[pick] = Fighter(before)
-        barracks[pick].ATK = random.choice(range(1, 10))
-        barracks[pick].DEF = random.choice(range(1, 10))
-        barracks[pick].WIS = random.choice(range(1, 10))
-        barracks[pick].AGI = random.choice(range(1, 10))
-        Portrait[before] = image(before)
-    
+    if build_state:
+        if build_pixite:
+            for n in range(5):
+                pick = open('Uncommon')
+                before = pick
+                while pick in barracks.keys():
+                    p = 1
+                    pick = f"{pick}-{p}"
+                    p += 1
+                barracks[pick] = Fighter(before)
+                barracks[pick].ATK = random.choice(range(1, 10))
+                barracks[pick].DEF = random.choice(range(1, 10))
+                barracks[pick].WIS = random.choice(range(1, 10))
+                barracks[pick].AGI = random.choice(range(1, 10))
+                Portrait[before] = image(before)
+
+    if menu_state:
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['journey'], 1).draw():
+            journey_menu = True
+        if Button(200, SCREEN_SIZE[1] - 50, Icon['build'], 1).draw():
+            build_menu = True
+
+    if journey_menu:
+        menu_state = False
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['begin'], 1).draw():
+            journey_start = True
+            
     if Button(50, 50, Icon['fight'], 1).draw():
         fight_start = True
         
