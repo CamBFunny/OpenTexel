@@ -384,8 +384,7 @@ while running:
     if game_state == 'journey':
         # Draw journey background
         if win_count == num_fights:
-            journey_complete = True
-            journey_state = False
+            game_state = 'journey_complete'
         elif not encounter:
             journey_timer += dt
             if journey_timer >= (3 / num_fights + random.choice(range(0, 10)) / 10):
@@ -404,31 +403,30 @@ while running:
             # Draw enemies
             if Button(50, 50, Icon['fight'], 1).draw() and not buttoncheck:
                 buttoncheck = True
-                fight_start = True
+                game_state = 'fight_setup'
 
-    if journey_complete:
+    if game_state == 'journey_complete':
         journey_timer += dt
         if not claimed:
             prize = [0, 0, 0, 0]
+            odds = [1, 3, 5, 10]
             for n in range(4):
                 prize[n] = random.choice(range(5, 11))
-            pixite += prize[0]
-            voxite += prize[1] // 3
-            doxite += prize[2] // 5
-            texite += prize[3] // 10
+            pixite += prize[0] // odds[0]
+            voxite += prize[1] // odds[1]
+            doxite += prize[2] // odds[2]
+            texite += prize[3] // odds[3]
             claimed = True
         draw_text(f"Journey Complete", Fonts['helv50b'], Colors['white'], 460, 250)
         clr = [Colors['orange'], Colors['white'], Colors['yellow'], Colors['blue']]
         for p in range(4):
-            draw_text(f"+{prize[p]}", Fonts['helv30b'], clr[p], 500, 300 + 30 * p)
+            draw_text(f"+{prize[p] // odds[}", Fonts['helv30b'], clr[p], 500, 300 + 30 * p)
         if journey_timer >= 3:
             journey_timer = 0
-            journey_complete = False
-            main_menu = True
+            game_state = 'main_menu'
 
-    if fight_start:
-        fight = True
-        fight_start = False
+    if game_state == 'fight_setup':
+        game_state = 'fight'
         overkill = 0
         frontline = [0, 0, 0]
         swipe_order = [0, ]
@@ -439,7 +437,7 @@ while running:
                 index = x * 3 + y
                 band[x][y] = barracks[xyz[index]] # Automatically assign band of fighter
 
-    if fight:
+    if game_state == 'fight':
         s = pygame.Surface((540, 545), pygame.SRCALPHA)
         s.fill((25, 25, 25, 100))
         screen.blit(s, (bx, by))
@@ -479,7 +477,7 @@ while running:
             if victory_time >= 3:
                 win_count += 1
                 encounter = False 
-                fight = False
+                game_state = 'journey'
                 victory = False
                 victory_time = 0
                 journey_timer = 0
