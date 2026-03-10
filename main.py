@@ -234,12 +234,7 @@ LeftClick = False
 fight = False
 strike = False
 strike_hold = False
-fight_start = False
-main_menu = True
-journey_menu = False
-build_menu = False
 build_state = False
-journey_state = False
 encounter = False
 victory = False
 enemy_attack = False
@@ -336,50 +331,67 @@ while running:
     if game_state == 'build_menu': 
         if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-pixite'], 1).draw() and not buttoncheck:
             buttoncheck = True
-            build_state = True
             build_pixite = True
+            game_state = 'build_state'
         if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-voxite'], 1).draw() and not buttoncheck:
-            buttoncheck = True
-            build_state = True
+            buttoncheck = True 
             build_voxite = True
+            game_state = 'build_state'
         if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-doxite'], 1).draw() and not buttoncheck:
-            buttoncheck = True
-            build_state = True
+            buttoncheck = True 
             build_doxite = True
+            game_state = 'build_state'
         if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-texite'], 1).draw() and not buttoncheck:
-            buttoncheck = True
-            build_state = True
+            buttoncheck = True 
             build_texite = True
+            game_state = 'build_state'
             
-        if build_state:
-            build_state = False
-            if build_pixite:
-                z = ['Uncommon', 10, 5] * 5 + ['Common', 1, 1] * 3
-                build_pixite = False
-            if build_voxite:
-                z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3
-                build_voxite = False
-            if build_doxite:
-                z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2
-                build_doxite = False
-            if build_texite:
-                z = [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2 + [['Legendary', 50, 25]]
-                build_texite = False
-            for n in range(len(z)):
-                z_n = z[n]
-                pick = open(z_n[0])
-                before = pick
-                while pick in barracks.keys():
-                    p = 1
-                    pick = f"{pick}-{p}"
-                    p += 1
-                barracks[pick] = Fighter(before)
-                barracks[pick].HP = random.choice(range(1, z_n[1]+1))
-                barracks[pick].ATK = random.choice(range(1, z_n[1]+1))
-                barracks[pick].DEF = random.choice(range(1, z_n[1]+1))
-                barracks[pick].WIS = random.choice(range(1, z_n[2]+1))
-                barracks[pick].AGI = random.choice(range(1, z_n[2]+1))
-                Portrait[before] = image(before)
+    if game_state == 'build_state':
+        pull = {}
+        if build_pixite:
+            z = ['Uncommon', 10, 5] * 5 + ['Common', 1, 1] * 3
+            build_pixite = False
+        if build_voxite:
+            z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3
+            build_voxite = False
+        if build_doxite:
+            z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2
+            build_doxite = False
+        if build_texite:
+            z = [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2 + [['Legendary', 50, 25]]
+            build_texite = False
+        for n in range(len(z)):
+            z_n = z[n]
+            pick = open(z_n[0])
+            before = pick
+            while pick in barracks.keys():
+                p = 1
+                pick = f"{pick}-{p}"
+                p += 1
+            barracks[pick] = Fighter(before)
+            barracks[pick].HP = random.choice(range(1, z_n[1]+1))
+            barracks[pick].ATK = random.choice(range(1, z_n[1]+1))
+            barracks[pick].DEF = random.choice(range(1, z_n[1]+1))
+            barracks[pick].WIS = random.choice(range(1, z_n[2]+1))
+            barracks[pick].AGI = random.choice(range(1, z_n[2]+1))
+            Portrait[before] = image(before)
+            pull[n] = barracks[pick]
+        game_state = 'build_results'
+        results_timer = 0
+        num_display = 0
+        num_total = len(pull.keys())
+
+    if game_state = 'build_results'
+        if num_display < num_total:
+            results_timer += dt
+            if results_timer >= 1:
+                num_display += 1
+        elif Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['continue'], 1).draw() and not buttoncheck:
+            game_state = 'build_menu'
+        for n in range(num_display):
+            logo_pick = pull[n]
+            logo_result = Portrait[logo_pick.name]
+            screen.blit(logo_result, (200, 50 + space * n))
 
     if game_state == 'journey':
         # Draw journey background
