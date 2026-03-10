@@ -140,8 +140,8 @@ scl = SCREEN_SIZE[0] / sz[0]
 background = pygame.transform.scale(background, (sz[0] * scl, sz[1] * scl))
 
 Icon = {}
-list = ['fight', 'journey', 'build', 'begin']
-for n in list:
+pic_list = ['fight', 'journey', 'build', 'begin']
+for n in pic_list:
     Icon[n] = pygame.image.load(f"lib/images/{n}.png")
 
 # ODS Import code
@@ -234,8 +234,29 @@ LeftClick = False
 fight = False
 strike = False
 strike_hold = False
-spawn_state = True
 fight_start = False
+main_menu = True
+journey_menu = False
+build_menu = False
+build_state = False
+journey_state = False
+encounter = False
+victory = False
+enemy_attack = False
+enemy_done = False
+attack_state = False
+journey_complete = False
+
+#debug
+build_state = True
+build_pixite = False
+pixite = 10
+build_voxite = True
+voxite = 5
+build_doxite = True
+doxite = 2
+build_texite = False
+texite = 1
 
 while running:
     # CONTROLS
@@ -295,9 +316,11 @@ while running:
 
     if journey_menu:
         main_menu = False
-        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['begin'], 1).draw():
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 250, Icon['begin'], 1).draw():
             journey_state = True
+            journey_menu = False
             journey_timer = 0
+            win_count = 0
             num_fights = random.choice(range(1, 4))
             
     if build_menu:
@@ -307,7 +330,6 @@ while running:
             build_pixite = True
         if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-voxite'], 1).draw():
             build_state = True
-            build_pixite = True
             build_voxite = True
         if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-doxite'], 1).draw():
             build_state = True
@@ -343,9 +365,12 @@ while running:
 
     if journey_state:
         # Draw journey background
-        if not encounter:
+        if win_count == num_fights:
+            journey_complete = True
+            journey_state = False
+        elif not encounter:
             journey_timer += dt
-            if journey_timer >= (3 / num_fights + random.choice(0, 10) / 10):
+            if journey_timer >= (3 / num_fights + random.choice(range(0, 10)) / 10):
                 encounter = True
                 enemy_power = 0
                 for x in range(3):
@@ -355,16 +380,33 @@ while running:
                     enemies[x].HP = random.choice(range(30, 100))
                     enemies[x].ATK = random.choice(range(1, 10))
                     enemy_power += enemies[x].ATK
-        if encounter and not fight:
+        elif encounter and not fight:
             # Draw enemies
             if Button(50, 50, Icon['fight'], 1).draw():
-                fight_start = True 
-        
+                fight_start = True
+
+    if journey_complete:
+        journey_timer += dt
+        if not claimed:
+            prize = [0, 0, 0, 0]
+            for n in range(4):
+                prize[n] = random.choice(range(5, 11))
+            pixite += prize[0]
+            voxite += prize[1] // 3
+            doxite += prize[2] // 5
+            texite += prize[3] // 10
+            claimed = True
+        if journey_timer >= 3:
+            journey_timer = 0
+            journey_complete = False
+            main_menu = True
+
     if fight_start:
         fight = True
         fight_start = False
         overkill = 0
-        spawn_state = True
+        frontline = [0, 0, 0]
+        swipe_order = [0, ]
         # Temporary band setup, remove once menus work
         xyz = list(barracks)
         for x in range(3):
@@ -377,7 +419,7 @@ while running:
         s.fill((25, 25, 25, 100))
         screen.blit(s, (bx, by))
         for x in range(3):
-            if enemies[x].HP > 0 and not spawn_state:
+            if enemies[x].HP > 0:
                 enemy_hp = enemies[x].HP
                 q = len(f"{enemy_hp}")
                 villain = Portrait[enemies[x].name]
@@ -401,15 +443,20 @@ while running:
         for n in range(3):
             total_health[n] = enemies[n].HP
 
-        if np.sum(total_health) == 0:
+        if np.sum(total_health) == 0 and not victory:
             victory = True
+            enemy_power = 0
             victory_time = 0
 
         if victory:
             victory_time += dt
             if victory_time >= 3:
+                win_count += 1
                 encounter = False 
                 fight = False
+                victory = False
+                victory_time = 0
+                journey_timer = 0
 
         # Swipe selections
         swipe_colors = [Colors['yellow'], Colors['orange'], Colors['red']]
@@ -452,36 +499,40 @@ while running:
                 vertices = [(rx + 35, ry + space / 2), (rx - space / 2, ry - 35),
                             (rx - space * 3.2, ry + space * 2.5), (rx - space * 2.5, ry + space * 3.2)]
                 pygame.draw.polygon(screen, swipe_colors[x], vertices, 4)  # Draw the polygon
-
             pygame.draw.rect(screen, swipe_colors[x], rectangle, 4)
 
         if frontline[0] != 0:
             attack_order[queue] = frontline
             frontline = [0, 0, 0]
             damage = [0, 0, 0]
+            attack_timer = 0
             queue += 1
+            if queue == 3:
+                attack_state = True
 
-        if queue == 3:    # Attack animations
+        if attack_state:    # Attack animations
+            attack_timer += dt
             power = 0
             t1 = 0.6
             t2 = 0.82
             t3 = 1.6
             speed = 1300
-            if t1 < attack_timer <= t2:
-                xx = front_pos[0] + (attack_timer-t1) * speed
-            elif t2 < attack_timer <= t3:
-                strike = True
-                xx = front_pos[0] + (t2 - t1) * speed - (attack_timer-t2) * 400
-                for j in range(3):
-                    draw_text(f"-{damage[j]}", Fonts['helv30b'], Colors['orange'], enemies_pos[0][0] - 20, enemies_pos[0][1] + space * j
-                if xx < front_pos[0]:
+            if attack_counter < 3:
+                if t1 < attack_timer <= t2:
+                    xx = front_pos[0] + (attack_timer-t1) * speed
+                elif t2 < attack_timer <= t3:
+                    strike = True
+                    xx = front_pos[0] + (t2 - t1) * speed - (attack_timer-t2) * 400
+                    for j in range(3):
+                        draw_text(f"-{damage[j]}", Fonts['helv30b'], Colors['orange'], enemies_pos[0][0] - 20, enemies_pos[0][1] + space * j)
+                    if xx < front_pos[0]:
+                        xx = front_pos[0]
+                for y in range(3):
+                    k = attack_counter
+                    screen.blit(Portrait[attack_order[k][y].name], (xx, front_pos[1] + space * y))
+                    power += attack_order[k][y].ATK
+                else:
                     xx = front_pos[0]
-            else:
-                xx = front_pos[0]
-            for y in range(3):
-                k = attack_counter
-                screen.blit(Portrait[attack_order[k][y].name], (xx, front_pos[1] + space*y))
-                power += attack_order[k][y].ATK
             if strike and not strike_hold:
                 for j in range(3):
                     modifier = 1
@@ -497,22 +548,33 @@ while running:
                 strike = False
             if attack_timer >= 2:
                 attack_counter += 1
+                if victory:
+                    attack_counter = 3
                 attack_timer = 0
                 strike_hold = False
                 strike = False
-            else:
-                attack_timer += dt
             if attack_counter == 3:
                 enemy_attack = True
-            if enemy_attack and attack_timer > t1:
+                attack_state = False
+
+        if enemy_attack:
+            attack_timer += dt
+            if attack_timer > 0.5 and not enemy_done:
                 hp_band -= enemy_power
-                enemy_attack = False
-                enemy_done - True
-            elif enemy_done and attack_timer > t3:
-                queue = 0
-                attack_counter = 0
-                attack_order = {}
-                swipe_order = [0,]
+                enemy_done = True
+            elif enemy_done :
+                if enemy_power > 0:
+                    draw_text(f"-{enemy_power}", Fonts['helv35b'], Colors['orange'], 300, 100)
+                if attack_timer > 2:
+                    queue = 0
+                    enemy_attack = False
+                    enemy_done = False
+                    attack_counter = 0
+                    attack_timer = 0
+                    attack_order = {}
+                    swipe_order = [0,]
+                    strike_hold = False
+                    strike = False
 
     pygame.display.update()
     dt = clock.tick(framerate) / 1000	# Makes movement or time-related events work independent of framerate
