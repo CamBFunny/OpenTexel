@@ -247,6 +247,8 @@ enemy_done = False
 attack_state = False
 journey_complete = False
 
+dmg_color = [Colors['orange'], ] * 3
+
 #debug
 build_state = True
 build_pixite = False
@@ -309,6 +311,10 @@ while running:
     screen.blit(background, (0, -200))
 
     if main_menu:
+        stash = [pixite, voxite, doxite, texite]
+        clr = [Colors['orange'], Colors['white'], Colors['yellow'], Colors['blue']]
+        for p in range(4):
+            draw_text(f"x{stash[p]}", Fonts['helv20b'], clr[p], 1100, 100 + 30 * p)
         if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['journey'], 1).draw():
             journey_menu = True
         if Button(200, SCREEN_SIZE[1] - 50, Icon['build'], 1).draw():
@@ -373,11 +379,13 @@ while running:
             if journey_timer >= (3 / num_fights + random.choice(range(0, 10)) / 10):
                 encounter = True
                 enemy_power = 0
+                og_health = [0, 0, 0]
                 for x in range(3):
                     pick = open('Uncommon')
                     enemies[x] = Fighter(pick)
                     Portrait[pick] = image(pick)
                     enemies[x].HP = random.choice(range(30, 100))
+                    og_health[x] = enemies[x].HP
                     enemies[x].ATK = random.choice(range(1, 10))
                     enemy_power += enemies[x].ATK
         elif encounter and not fight:
@@ -396,6 +404,10 @@ while running:
             doxite += prize[2] // 5
             texite += prize[3] // 10
             claimed = True
+        draw_text(f"Journey Complete", Fonts['helv50b'], Colors['white'], 460, 250)
+        clr = [Colors['orange'], Colors['white'], Colors['yellow'], Colors['blue']]
+        for p in range(4):
+            draw_text(f"+{prize[p]}", Fonts['helv30b'], clr[p], 500, 300 + 30 * p)
         if journey_timer >= 3:
             journey_timer = 0
             journey_complete = False
@@ -425,7 +437,8 @@ while running:
                 villain = Portrait[enemies[x].name]
                 villain = pygame.transform.flip(villain, True, False)
                 enemy_portrait = colorize(villain, Colors['red'])
-                rectangle = pygame.Rect(enemies_pos[0][0], 220 + space * x, 100, 15)
+                gauge = 100 * enemy_hp / og_health[x]
+                rectangle = pygame.Rect(enemies_pos[0][0], 220 + space * x, gauge, 15)
                 pygame.draw.rect(screen, Colors['red'], rectangle)
                 draw_text(f"{enemy_hp} HP", Fonts['helv10'], Colors['white'],
                           enemies_pos[0][0] + 3, 223 + space * x)
@@ -457,6 +470,7 @@ while running:
                 victory = False
                 victory_time = 0
                 journey_timer = 0
+                claimed = False
 
         # Swipe selections
         swipe_colors = [Colors['yellow'], Colors['orange'], Colors['red']]
@@ -524,7 +538,7 @@ while running:
                     strike = True
                     xx = front_pos[0] + (t2 - t1) * speed - (attack_timer-t2) * 400
                     for j in range(3):
-                        draw_text(f"-{damage[j]}", Fonts['helv30b'], Colors['orange'], enemies_pos[0][0] - 20, enemies_pos[0][1] + space * j)
+                        draw_text(f"-{damage[j]}", Fonts['helv30b'], dmg_color[j], enemies_pos[0][0] - 20, enemies_pos[0][1] + space * j)
                     if xx < front_pos[0]:
                         xx = front_pos[0]
                 for y in range(3):
@@ -534,10 +548,12 @@ while running:
                 else:
                     xx = front_pos[0]
             if strike and not strike_hold:
+                dmg_color = [Colors['orange'],] * 3
                 for j in range(3):
                     modifier = 1
                     crit_chance = 100
                     if 1 == random.choice(range(crit_chance)):
+                        dmg_color[j] = Colors['red']
                         modifier = 10
                     damage[j] = power * modifier
                     enemies[j].HP -= damage[j]
