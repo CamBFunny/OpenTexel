@@ -140,7 +140,8 @@ scl = SCREEN_SIZE[0] / sz[0]
 background = pygame.transform.scale(background, (sz[0] * scl, sz[1] * scl))
 
 Icon = {}
-pic_list = ['fight', 'journey', 'build', 'begin']
+pic_list = ['fight', 'journey', 'build', 'begin', 'continue', 'build-pixite',
+            'build-voxite', 'build-doxite', 'build-texite']
 for n in pic_list:
     Icon[n] = pygame.image.load(f"lib/images/{n}.png")
 
@@ -231,31 +232,29 @@ def open(box):
 
 LeftHold = False
 LeftClick = False
-fight = False
 strike = False
 strike_hold = False
-build_state = False
 encounter = False
 victory = False
 enemy_attack = False
 enemy_done = False
 attack_state = False
-journey_complete = False
+buttoncheck = False
+RightClick = False
 
 game_state = 'main_menu'
 
 dmg_color = [Colors['orange'], ] * 3
 
 #debug
-build_state = True
-build_pixite = False
 pixite = 10
-build_voxite = True
 voxite = 5
-build_doxite = True
 doxite = 2
-build_texite = False
 texite = 1
+build_pixite = False
+build_voxite = False
+build_doxite = False
+build_texite = False
 
 while running:
     # CONTROLS
@@ -314,7 +313,7 @@ while running:
             draw_text(f"x{stash[p]}", Fonts['helv20b'], clr[p], 1100, 100 + 30 * p)
         if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['journey'], 1).draw() and not buttoncheck:
             buttoncheck = True
-            game_state == 'journey_menu':
+            game_state = 'journey_menu'
         if Button(200, SCREEN_SIZE[1] - 50, Icon['build'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'build_menu'
@@ -328,28 +327,39 @@ while running:
             win_count = 0
             num_fights = random.choice(range(1, 4))
             
-    if game_state == 'build_menu': 
-        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-pixite'], 1).draw() and not buttoncheck:
+    if game_state == 'build_menu':
+        if RightClick:
+            RightClick = False
+            game_state = 'main_menu'
+        if Button(200, 300, Icon['build-pixite'], 1).draw() and not buttoncheck:
             buttoncheck = True
-            build_pixite = True
-            game_state = 'build_state'
-        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-voxite'], 1).draw() and not buttoncheck:
-            buttoncheck = True 
-            build_voxite = True
-            game_state = 'build_state'
-        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-doxite'], 1).draw() and not buttoncheck:
-            buttoncheck = True 
-            build_doxite = True
-            game_state = 'build_state'
-        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-texite'], 1).draw() and not buttoncheck:
-            buttoncheck = True 
-            build_texite = True
-            game_state = 'build_state'
+            if pixite >= 5:
+                pixite -= 5
+                build_pixite = True
+                game_state = 'build_state'
+        if Button(200, SCREEN_SIZE[1] - 300, Icon['build-voxite'], 1).draw() and not buttoncheck:
+            buttoncheck = True
+            if voxite >= 5:
+                voxite -= 5
+                build_voxite = True
+                game_state = 'build_state'
+        if Button(SCREEN_SIZE[0] - 300, 300, Icon['build-doxite'], 1).draw() and not buttoncheck:
+            buttoncheck = True
+            if doxite >= 5:
+                doxite -= 5
+                build_doxite = True
+                game_state = 'build_state'
+        if Button(SCREEN_SIZE[0] - 300, SCREEN_SIZE[1] - 300, Icon['build-texite'], 1).draw() and not buttoncheck:
+            buttoncheck = True
+            if texite >= 5:
+                texite -= 5
+                build_texite = True
+                game_state = 'build_state'
             
     if game_state == 'build_state':
         pull = {}
         if build_pixite:
-            z = ['Uncommon', 10, 5] * 5 + ['Common', 1, 1] * 3
+            z = [['Uncommon', 10, 5]] * 5 + [['Common', 1, 1]] * 3
             build_pixite = False
         if build_voxite:
             z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3
@@ -381,12 +391,13 @@ while running:
         num_display = 0
         num_total = len(pull.keys())
 
-    if game_state = 'build_results'
+    if game_state == 'build_results':
         if num_display < num_total:
             results_timer += dt
             if results_timer >= 1:
                 num_display += 1
         elif Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['continue'], 1).draw() and not buttoncheck:
+            buttoncheck = True
             game_state = 'build_menu'
         for n in range(num_display):
             logo_pick = pull[n]
@@ -411,7 +422,7 @@ while running:
                     og_health[x] = enemies[x].HP
                     enemies[x].ATK = random.choice(range(1, 10))
                     enemy_power += enemies[x].ATK
-        elif encounter and not fight:
+        elif encounter and game_state != 'fight':
             # Draw enemies
             if Button(50, 50, Icon['fight'], 1).draw() and not buttoncheck:
                 buttoncheck = True
@@ -432,7 +443,7 @@ while running:
         draw_text(f"Journey Complete", Fonts['helv50b'], Colors['white'], 460, 250)
         clr = [Colors['orange'], Colors['white'], Colors['yellow'], Colors['blue']]
         for p in range(4):
-            draw_text(f"+{prize[p] // odds[}", Fonts['helv30b'], clr[p], 500, 300 + 30 * p)
+            draw_text(f"+{prize[p] // odds[p]}", Fonts['helv30b'], clr[p], 500, 300 + 30 * p)
         if journey_timer >= 3:
             journey_timer = 0
             game_state = 'main_menu'
