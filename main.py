@@ -247,6 +247,8 @@ enemy_done = False
 attack_state = False
 journey_complete = False
 
+game_state = 'main_menu'
+
 dmg_color = [Colors['orange'], ] * 3
 
 #debug
@@ -310,66 +312,76 @@ while running:
     screen.fill((5, 5, 10))
     screen.blit(background, (0, -200))
 
-    if main_menu:
+    if game_state == 'main_menu':
         stash = [pixite, voxite, doxite, texite]
         clr = [Colors['orange'], Colors['white'], Colors['yellow'], Colors['blue']]
         for p in range(4):
             draw_text(f"x{stash[p]}", Fonts['helv20b'], clr[p], 1100, 100 + 30 * p)
-        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['journey'], 1).draw():
-            journey_menu = True
-        if Button(200, SCREEN_SIZE[1] - 50, Icon['build'], 1).draw():
-            build_menu = True
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['journey'], 1).draw() and not buttoncheck:
+            buttoncheck = True
+            game_state == 'journey_menu':
+        if Button(200, SCREEN_SIZE[1] - 50, Icon['build'], 1).draw() and not buttoncheck:
+            buttoncheck = True
+            game_state = 'build_menu'
 
-    if journey_menu:
-        main_menu = False
-        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 250, Icon['begin'], 1).draw():
-            journey_state = True
-            journey_menu = False
+    if game_state == 'journey_menu': 
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 250, Icon['begin'], 1).draw() and not buttoncheck:
+            buttoncheck = True
+            game_state = 'journey'
+            journey_state = True 
             journey_timer = 0
             win_count = 0
             num_fights = random.choice(range(1, 4))
             
-    if build_menu:
-        main_menu = False
-        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-pixite'], 1).draw():
+    if game_state == 'build_menu': 
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-pixite'], 1).draw() and not buttoncheck:
+            buttoncheck = True
             build_state = True
             build_pixite = True
-        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-voxite'], 1).draw():
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-voxite'], 1).draw() and not buttoncheck:
+            buttoncheck = True
             build_state = True
             build_voxite = True
-        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-doxite'], 1).draw():
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-doxite'], 1).draw() and not buttoncheck:
+            buttoncheck = True
             build_state = True
             build_doxite = True
-        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-texite'], 1).draw():
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['build-texite'], 1).draw() and not buttoncheck:
+            buttoncheck = True
             build_state = True
             build_texite = True
             
-    if build_state:
-        if build_pixite:
-            z = ['Uncommon', 10, 5] * 5 + ['Common', 1, 1] * 3
-        if build_voxite:
-            z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3
-        if build_doxite:
-            z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2
-        if build_texite:
-            z = [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2 + [['Legendary', 50, 25]]
-        for n in range(len(z)):
-            z_n = z[n]
-            pick = open(z_n[0])
-            before = pick
-            while pick in barracks.keys():
-                p = 1
-                pick = f"{pick}-{p}"
-                p += 1
-            barracks[pick] = Fighter(before)
-            barracks[pick].HP = random.choice(range(1, z_n[1]+1))
-            barracks[pick].ATK = random.choice(range(1, z_n[1]+1))
-            barracks[pick].DEF = random.choice(range(1, z_n[1]+1))
-            barracks[pick].WIS = random.choice(range(1, z_n[2]+1))
-            barracks[pick].AGI = random.choice(range(1, z_n[2]+1))
-            Portrait[before] = image(before)
+        if build_state:
+            build_state = False
+            if build_pixite:
+                z = ['Uncommon', 10, 5] * 5 + ['Common', 1, 1] * 3
+                build_pixite = False
+            if build_voxite:
+                z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3
+                build_voxite = False
+            if build_doxite:
+                z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2
+                build_doxite = False
+            if build_texite:
+                z = [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2 + [['Legendary', 50, 25]]
+                build_texite = False
+            for n in range(len(z)):
+                z_n = z[n]
+                pick = open(z_n[0])
+                before = pick
+                while pick in barracks.keys():
+                    p = 1
+                    pick = f"{pick}-{p}"
+                    p += 1
+                barracks[pick] = Fighter(before)
+                barracks[pick].HP = random.choice(range(1, z_n[1]+1))
+                barracks[pick].ATK = random.choice(range(1, z_n[1]+1))
+                barracks[pick].DEF = random.choice(range(1, z_n[1]+1))
+                barracks[pick].WIS = random.choice(range(1, z_n[2]+1))
+                barracks[pick].AGI = random.choice(range(1, z_n[2]+1))
+                Portrait[before] = image(before)
 
-    if journey_state:
+    if game_state == 'journey':
         # Draw journey background
         if win_count == num_fights:
             journey_complete = True
@@ -390,7 +402,8 @@ while running:
                     enemy_power += enemies[x].ATK
         elif encounter and not fight:
             # Draw enemies
-            if Button(50, 50, Icon['fight'], 1).draw():
+            if Button(50, 50, Icon['fight'], 1).draw() and not buttoncheck:
+                buttoncheck = True
                 fight_start = True
 
     if journey_complete:
