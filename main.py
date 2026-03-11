@@ -405,11 +405,16 @@ while running:
             buttoncheck = True
             game_state = 'build_menu'
         for n in range(num_display):
-            logo_pick = pull[n]
-            logo_result = Portrait[logo_pick.name]
+            pull_n = pull[n]
+            logo_result = Portrait[pull_n.name]
             xx = 200 + space * (n % 5)
             yy = 100 * (1 + n // 5)
             screen.blit(logo_result, (xx, yy))
+            info = [pull_n.name, pull_n.HP, pull_n.ATK, pull_n.DEF, pull_n.WIS, pull_n.AGI,
+                    pull_n.LV, pull_n.SEF, pull_n.rarity,  pull_n.tribe, pull_n.sign, pull_n.type]
+            cat = ['', 'HP ', 'ATK', 'DEF', 'WIS', 'AGI', 'LV ', 'SEF', '', '', '', '']
+            for j in range(len(info)):
+            draw_text(f"{cat[j] {info[j}", Fonts['helv10b'], Colors['white'], xx + 30, yy + 10 * j)
 
     if game_state == 'journey':
         # Draw journey background
