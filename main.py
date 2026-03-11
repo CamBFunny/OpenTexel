@@ -51,7 +51,8 @@ for i in fsizes:
 Colors = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 'white': (255, 255, 255),
           'yellow': (255, 255, 0), 'orange': (255, 150, 0), 'pink': (255, 0, 150),
           'purple': (150, 0, 255), 'cyan': (0, 255, 255), 'teal': (0, 150, 255),
-          'lime': (150, 255, 0), 'seafoam': (0, 255, 150), 'magenta': (255, 0, 255)}
+          'lime': (150, 255, 0), 'seafoam': (0, 255, 150), 'magenta': (255, 0, 255),
+          'gold': (255, 215, 0)}
 
 class Fighter():
     def __init__(self, name):
@@ -249,10 +250,10 @@ game_state = 'main_menu'
 dmg_color = [Colors['orange'], ] * 3
 
 #debug
-pixite = 10
-voxite = 5
-doxite = 2
-texite = 1
+pixite = 12
+voxite = 7
+doxite = 1
+texite = 0
 build_pixite = False
 build_voxite = False
 build_doxite = False
@@ -406,7 +407,9 @@ while running:
         for n in range(num_display):
             logo_pick = pull[n]
             logo_result = Portrait[logo_pick.name]
-            screen.blit(logo_result, (200 + space * (n % 5), 100 * (1 + n // 5)))
+            xx = 200 + space * (n % 5)
+            yy = 100 * (1 + n // 5)
+            screen.blit(logo_result, (xx, yy))
 
     if game_state == 'journey':
         # Draw journey background
