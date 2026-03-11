@@ -339,8 +339,9 @@ while running:
         for n in range(band_size):  
             pick = barracks[
             logo_result = Portrait[pull_n.name]
-            xx = 200 + space * (n % 5)
-            yy = 100 * (1 + n // 5)
+            columns = 7
+            xx = 200 + space * 1.2 * (n % columns)
+            yy = 100 * (1 + n // columns)
             screen.blit(logo_result, (xx, yy))
             info = [pull_n.name, pull_n.HP, pull_n.ATK, pull_n.DEF, pull_n.WIS, pull_n.AGI,
                     pull_n.LV, pull_n.SEF, pull_n.rarity,  pull_n.tribe, pull_n.sign, pull_n.type]
@@ -473,7 +474,7 @@ while running:
         draw_text(f"Journey Complete", Fonts['helv50b'], Colors['white'], 460, 250)
         clr = [Colors['orange'], Colors['white'], Colors['yellow'], Colors['blue']]
         for p in range(4):
-            draw_text(f"+{prize[p] // odds[p]}", Fonts['helv30b'], clr[p], 500, 300 + 30 * p)
+            draw_text(f"+{prize[p] // odds[p]}", Fonts['helv40b'], clr[p], 500, 300 + 40 * p)
         if journey_timer >= 3:
             journey_timer = 0
             game_state = 'main_menu'
