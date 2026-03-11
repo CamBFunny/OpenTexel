@@ -56,11 +56,11 @@ Colors = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 'white'
 class Fighter():
     def __init__(self, name):
         self.name = name
-        self.HP = 1
-        self.ATK = 1
-        self.DEF = 1
-        self.WIS = 1
-        self.AGI = 1
+        self.HP = 0
+        self.ATK = 0
+        self.DEF = 0
+        self.WIS = 0
+        self.AGI = 0
         self.LV = 1
         self.SEF = 0
         self.rarity = 'Common'
@@ -107,6 +107,8 @@ Portrait = {}
 def image(name):
     name = pygame.image.load(f"lib/fighters/{name}_Sprite.webp")
     return name
+
+Portrait['-'] = image('empty')
 
 swipe_list = (K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8)
 def swipe(pressed):
@@ -380,6 +382,8 @@ while running:
                 p += 1
             barracks[pick] = Fighter(before)
             barracks[pick].HP = random.choice(range(1, z_n[1]+1))
+            if z[n] != 'Common':
+                barracks[pick].HP += 9
             barracks[pick].ATK = random.choice(range(1, z_n[1]+1))
             barracks[pick].DEF = random.choice(range(1, z_n[1]+1))
             barracks[pick].WIS = random.choice(range(1, z_n[2]+1))
@@ -402,7 +406,7 @@ while running:
         for n in range(num_display):
             logo_pick = pull[n]
             logo_result = Portrait[logo_pick.name]
-            screen.blit(logo_result, (200, 50 + space * n))
+            screen.blit(logo_result, (200 + space * (n % 5), 100 * (1 + n // 5)))
 
     if game_state == 'journey':
         # Draw journey background
@@ -418,9 +422,9 @@ while running:
                     pick = open('Uncommon')
                     enemies[x] = Fighter(pick)
                     Portrait[pick] = image(pick)
-                    enemies[x].HP = random.choice(range(30, 100))
+                    enemies[x].HP = random.choice(range(20, 80))
                     og_health[x] = enemies[x].HP
-                    enemies[x].ATK = random.choice(range(1, 10))
+                    enemies[x].ATK = random.choice(range(1, 6))
                     enemy_power += enemies[x].ATK
         elif encounter and game_state != 'fight':
             # Draw enemies
@@ -453,12 +457,14 @@ while running:
         overkill = 0
         frontline = [0, 0, 0]
         swipe_order = [0, ]
-        # Temporary band setup, remove once menus work
-        xyz = list(barracks)
-        for x in range(3):
-            for y in range(3):
-                index = x * 3 + y
-                band[x][y] = barracks[xyz[index]] # Automatically assign band of fighter
+        if win_count == 0:
+            # Temporary band setup, remove once menus work
+            xyz = list(barracks)
+            for x in range(3):
+                for y in range(3):
+                    index = x * 3 + y
+                    band[x][y] = barracks[xyz[index]] # Automatically assign band of fighter
+                    hp_band[x][y] = band[x][y].HP
 
     if game_state == 'fight':
         s = pygame.Surface((540, 545), pygame.SRCALPHA)
@@ -481,10 +487,19 @@ while running:
             for y in range(3):
                 pick = band[x][y]
                 pos = band_pos[x][y]
-                hp_band[x][y] = pick.HP
-                screen.blit(Portrait[pick.name], pos)
-                draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125)
-                draw_text(f"{pick.ATK} ATK", Fonts['helv15b'], Colors['red'], pos[0] + 90, pos[1] + 125)
+                hp_tmp = hp_band[x][y]
+                if hp_tmp <= 0:
+                    band[x][y] = empty
+                else:
+                    q = len(f"{hp_tmp}")
+                    gauge = 100 * hp_tmp / pick.HP
+                    rectangle = pygame.Rect(pos[0], pos[1], gauge, 15)
+                    pygame.draw.rect(screen, Colors['red'], rectangle)
+                    draw_text(f"{hp_tmp} HP", Fonts['helv10'], Colors['white'],
+                              pos[0] + 3, pos[1] + 3)
+                    screen.blit(Portrait[pick.name], pos)
+                    draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125)
+                    draw_text(f"{pick.ATK} ATK", Fonts['helv15b'], Colors['red'], pos[0] + 90, pos[1] + 125)
 
         total_health = np.array([0, 0, 0])
         for n in range(3):
@@ -609,6 +624,10 @@ while running:
 
         if enemy_attack:
             attack_timer += dt
+            enemy_power = 0
+            for x in range(3):
+                if enemies[x].HP > 0:
+                    enemy_power += enemies[x].ATK
             if attack_timer > 0.5 and not enemy_done:
                 hp_band -= enemy_power
                 enemy_done = True
