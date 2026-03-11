@@ -320,6 +320,9 @@ while running:
         if Button(200, SCREEN_SIZE[1] - 50, Icon['build'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'build_menu'
+        if Button(200, SCREEN_SIZE[1] - 50, Icon['band'], 1).draw() and not buttoncheck:
+            buttoncheck = True
+            game_state = 'band_menu'
 
     if game_state == 'journey_menu': 
         if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 250, Icon['begin'], 1).draw() and not buttoncheck:
@@ -329,6 +332,21 @@ while running:
             journey_timer = 0
             win_count = 0
             num_fights = random.choice(range(1, 4))
+
+    if game_state == 'band_menu':
+        b_keys = list(barracks.keys())
+        band_size = len(b_keys)
+        for n in range(band_size):  
+            pick = barracks[
+            logo_result = Portrait[pull_n.name]
+            xx = 200 + space * (n % 5)
+            yy = 100 * (1 + n // 5)
+            screen.blit(logo_result, (xx, yy))
+            info = [pull_n.name, pull_n.HP, pull_n.ATK, pull_n.DEF, pull_n.WIS, pull_n.AGI,
+                    pull_n.LV, pull_n.SEF, pull_n.rarity,  pull_n.tribe, pull_n.sign, pull_n.type]
+            cat = ['', 'HP ', 'ATK', 'DEF', 'WIS', 'AGI', 'LV ', 'SEF', '', '', '', '']
+            for j in range(len(info)):
+                draw_text(f"{cat[j] {info[j}", Fonts['helv10b'], Colors['white'], xx + 30, yy + 10 * j) 
             
     if game_state == 'build_menu':
         if RightClick:
@@ -414,7 +432,7 @@ while running:
                     pull_n.LV, pull_n.SEF, pull_n.rarity,  pull_n.tribe, pull_n.sign, pull_n.type]
             cat = ['', 'HP ', 'ATK', 'DEF', 'WIS', 'AGI', 'LV ', 'SEF', '', '', '', '']
             for j in range(len(info)):
-            draw_text(f"{cat[j] {info[j}", Fonts['helv10b'], Colors['white'], xx + 30, yy + 10 * j)
+                draw_text(f"{cat[j] {info[j}", Fonts['helv10b'], Colors['white'], xx + 30, yy + 10 * j)
 
     if game_state == 'journey':
         # Draw journey background
