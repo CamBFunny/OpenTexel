@@ -342,10 +342,14 @@ while running:
         for n in range(band_size):  
             tmp = b_keys[n]
             pick = barracks[tmp]
-            logo_result = Portrait[pick.name]
+            logo = Portrait[pick.name]
             columns = 7
             xx = 70 + space * 1.1 * (n % columns)
             yy = 100 * (1 + n // columns)
+            if Button(logo, xx, yy, 1):
+                selection = pick
+                game_state == 'fusion'
+                fuse_setup = True
             screen.blit(logo_result, (xx, yy))
             info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI,
                     pick.LV, pick.SEF, pick.rarity,  pick.tribe, pick.sign, pick.type]
@@ -454,6 +458,18 @@ while running:
 
     if game_state == 'fusion'
         # fusion mechanics
+        if fuse_setup == True:
+            name_fuse = selection.name
+            b_names = list(barracks.keys())
+            fuse_dict = {}
+            counter = 0
+            for n in range(len(b_names)):
+                name_checker = barracks[b_names[n]]
+                if name_fuse == name_checker:
+                    fuse_dict[counter] = b_names[n]
+                    counter += 1
+            fuse_setup = False
+        
     
     if game_state == 'journey':
         # Draw journey background
