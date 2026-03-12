@@ -346,11 +346,10 @@ while running:
             columns = 7
             xx = 70 + space * 1.1 * (n % columns)
             yy = 100 * (1 + n // columns)
-            if Button(logo, xx, yy, 1):
+            if Button(xx, yy, logo, 1).draw():
                 selection = pick
                 game_state == 'fusion'
-                fuse_setup = True
-            screen.blit(logo_result, (xx, yy))
+                fuse_setup = True 
             info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI,
                     pick.LV, pick.SEF, pick.rarity,  pick.tribe, pick.sign, pick.type]
             cat = ['', 'HP ', 'ATK', 'DEF', 'WIS', 'AGI', 'LV ', 'SEF', '']
@@ -468,7 +467,25 @@ while running:
                 if name_fuse == name_checker:
                     fuse_dict[counter] = b_names[n]
                     counter += 1
-            fuse_setup = False
+            fuse_setup = False  
+        for m in range(counter):
+            pick = fuses_dict[m]
+            logo = Portrait[pick.name]
+            columns = 7
+            xx = 70 + space * 1.1 * (n % columns)
+            yy = 100 * (1 + n // columns)
+            if Button(logo, xx, yy, 1):  
+            info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI,
+                    pick.LV, pick.SEF, pick.rarity,  pick.tribe, pick.sign, pick.type]
+            cat = ['', 'HP ', 'ATK', 'DEF', 'WIS', 'AGI', 'LV ', 'SEF', '']
+            for j in range(len(info)):
+                if j == 0:
+                    y_text = yy - 10
+                    font_a = Fonts['helv20b']
+                else:
+                    y_text = yy
+                    font_a = Fonts['helv10b']
+                draw_text(f"{cat[j]} {info[j]}", font_a, Colors['white'], x_text, y_text + 18 * j)
         
     
     if game_state == 'journey':
