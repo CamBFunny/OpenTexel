@@ -452,6 +452,9 @@ while running:
                 x_text = xx - 50
                 draw_text(f"{cat[j]} {info[j]}", font_a, Colors['white'], x_text, y_text + 18 * j)
 
+    if game_state == 'fusion'
+        # fusion mechanics
+    
     if game_state == 'journey':
         # Draw journey background
         if win_count == num_fights:
