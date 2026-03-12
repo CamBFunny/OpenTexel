@@ -144,7 +144,7 @@ background = pygame.transform.scale(background, (sz[0] * scl, sz[1] * scl))
 
 Icon = {}
 pic_list = ['fight', 'journey', 'build', 'begin', 'continue', 'build-pixite',
-            'build-voxite', 'build-doxite', 'build-texite']
+            'build-voxite', 'build-doxite', 'build-texite', 'band']
 for n in pic_list:
     Icon[n] = pygame.image.load(f"lib/images/{n}.png")
 
@@ -320,7 +320,7 @@ while running:
         if Button(200, SCREEN_SIZE[1] - 50, Icon['build'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'build_menu'
-        if Button(200, SCREEN_SIZE[1] - 50, Icon['band'], 1).draw() and not buttoncheck:
+        if Button(900, SCREEN_SIZE[1] - 150, Icon['band'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'band_menu'
 
@@ -334,20 +334,30 @@ while running:
             num_fights = random.choice(range(1, 4))
 
     if game_state == 'band_menu':
+        if RightClick:
+            RightClick = False
+            game_state = 'main_menu'
         b_keys = list(barracks.keys())
         band_size = len(b_keys)
         for n in range(band_size):  
-            pick = barracks[
-            logo_result = Portrait[pull_n.name]
+            tmp = b_keys[n]
+            pick = barracks[tmp]
+            logo_result = Portrait[pick.name]
             columns = 7
-            xx = 200 + space * 1.2 * (n % columns)
+            xx = 70 + space * 1.1 * (n % columns)
             yy = 100 * (1 + n // columns)
             screen.blit(logo_result, (xx, yy))
-            info = [pull_n.name, pull_n.HP, pull_n.ATK, pull_n.DEF, pull_n.WIS, pull_n.AGI,
-                    pull_n.LV, pull_n.SEF, pull_n.rarity,  pull_n.tribe, pull_n.sign, pull_n.type]
-            cat = ['', 'HP ', 'ATK', 'DEF', 'WIS', 'AGI', 'LV ', 'SEF', '', '', '', '']
+            info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI,
+                    pick.LV, pick.SEF, pick.rarity,  pick.tribe, pick.sign, pick.type]
+            cat = ['', 'HP ', 'ATK', 'DEF', 'WIS', 'AGI', 'LV ', 'SEF', '']
             for j in range(len(info)):
-                draw_text(f"{cat[j] {info[j}", Fonts['helv10b'], Colors['white'], xx + 30, yy + 10 * j) 
+                if j == 0:
+                    y_text = yy - 10
+                    font_a = Fonts['helv20b']
+                else:
+                    y_text = yy
+                    font_a = Fonts['helv10b']
+                draw_text(f"{cat[j]} {info[j]}", font_a, Colors['white'], x_text, y_text + 18 * j)
             
     if game_state == 'build_menu':
         if RightClick:
@@ -426,14 +436,21 @@ while running:
         for n in range(num_display):
             pull_n = pull[n]
             logo_result = Portrait[pull_n.name]
-            xx = 200 + space * (n % 5)
-            yy = 100 * (1 + n // 5)
+            xx = 110 + space * 1.5 * (n % 5)
+            yy = 70 + 230 * (n // 5)
             screen.blit(logo_result, (xx, yy))
             info = [pull_n.name, pull_n.HP, pull_n.ATK, pull_n.DEF, pull_n.WIS, pull_n.AGI,
-                    pull_n.LV, pull_n.SEF, pull_n.rarity,  pull_n.tribe, pull_n.sign, pull_n.type]
-            cat = ['', 'HP ', 'ATK', 'DEF', 'WIS', 'AGI', 'LV ', 'SEF', '', '', '', '']
+                    pull_n.LV, pull_n.SEF, pull_n.rarity]
+            cat = ['', 'HP ', 'ATK', 'DEF', 'WIS', 'AGI', 'LV ', 'SEF', '']
             for j in range(len(info)):
-                draw_text(f"{cat[j] {info[j}", Fonts['helv10b'], Colors['white'], xx + 30, yy + 10 * j)
+                if j == 0:
+                    y_text = yy - 10
+                    font_a = Fonts['helv25b']
+                else:
+                    y_text = yy
+                    font_a = Fonts['helv15b']
+                x_text = xx - 50
+                draw_text(f"{cat[j]} {info[j]}", font_a, Colors['white'], x_text, y_text + 18 * j)
 
     if game_state == 'journey':
         # Draw journey background
@@ -477,6 +494,16 @@ while running:
             draw_text(f"+{prize[p] // odds[p]}", Fonts['helv40b'], clr[p], 500, 300 + 40 * p)
         if journey_timer >= 3:
             journey_timer = 0
+            game_state = 'main_menu'
+
+    if game_state == 'failure':
+        fail_time += dt
+        draw_text(f"Journey Failed", Fonts['helv50b'], Colors['red'], 460, 250)
+        prize = 2
+        pixite += prize
+        draw_text(f"+{prize}", Fonts['helv40b'], Colors['orange'], 500, 380)
+        if fail_time >= 3:
+            fail_time = 0
             game_state = 'main_menu'
 
     if game_state == 'fight_setup':
@@ -536,6 +563,16 @@ while running:
             victory = True
             enemy_power = 0
             victory_time = 0
+
+        if np.sum(hp_band) <= 0:
+            death_time += dt
+            if death_time > 3:
+                game_state = 'failure'
+                enemy_power = 0
+                fail_time = 0
+                death_time = 0
+                encounter = False
+                journey_timer = 0
 
         if victory:
             victory_time += dt
@@ -657,10 +694,11 @@ while running:
                     enemy_power += enemies[x].ATK
             if attack_timer > 0.5 and not enemy_done:
                 hp_band -= enemy_power
+                if np.sum(hp_band) <= 0:
+                    death_time = 0
                 enemy_done = True
-            elif enemy_done :
-                if enemy_power > 0:
-                    draw_text(f"-{enemy_power}", Fonts['helv35b'], Colors['orange'], 300, 100)
+            elif enemy_done:
+                draw_text(f"-{enemy_power}", Fonts['helv35b'], Colors['orange'], 300, 100)
                 if attack_timer > 2:
                     queue = 0
                     enemy_attack = False
