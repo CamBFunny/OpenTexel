@@ -144,7 +144,7 @@ background = pygame.transform.scale(background, (sz[0] * scl, sz[1] * scl))
 
 Icon = {}
 pic_list = ['fight', 'journey', 'build', 'begin', 'continue', 'build-pixite',
-            'build-voxite', 'build-doxite', 'build-texite', 'band', 'check']
+            'build-voxite', 'build-doxite', 'build-texite', 'band', 'check', 'fuse']
 for n in pic_list:
     Icon[n] = pygame.image.load(f"lib/images/{n}.png")
 
@@ -503,6 +503,15 @@ while running:
                     font_a = Fonts['helv10b']
                 x_text = xx - 50
                 draw_text(f"{cat[j]} {info[j]}", font_a, Colors['white'], x_text, y_text + 18 * j)
+        if any(check_fuse):
+            if Button(500, SCREEN_SIZE[1] - 100, Icon['fuse'], 1).draw() and not buttoncheck:
+                game_state = 'fuse_animation'
+                fuse_timer = 0
+
+    if game_state == 'fuse_animation':
+        fuse_timer += dt
+        if fuse_timer >= 3:
+            game_state = 'main_menu'
 
     if game_state == 'journey':
         # Draw journey background
