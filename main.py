@@ -144,9 +144,13 @@ background = pygame.transform.scale(background, (sz[0] * scl, sz[1] * scl))
 
 Icon = {}
 pic_list = ['fight', 'journey', 'build', 'begin', 'continue', 'build-pixite',
-            'build-voxite', 'build-doxite', 'build-texite', 'band']
+            'build-voxite', 'build-doxite', 'build-texite', 'band', 'check']
 for n in pic_list:
     Icon[n] = pygame.image.load(f"lib/images/{n}.png")
+
+sz = Icon['check'].get_size()
+scl = 22
+Icon['check'] = pygame.transform.scale(Icon['check'], (sz[0]/scl, sz[1]/scl))
 
 # ODS Import code
 file_path = 'db_texel.ods'
@@ -344,14 +348,15 @@ while running:
             pick = barracks[tmp]
             logo = Portrait[pick.name]
             columns = 7
-            xx = 70 + space * 1.1 * (n % columns)
+            xx = 100 + space * 1.1 * (n % columns)
             yy = 100 * (1 + n // columns)
             if Button(xx, yy, logo, 1).draw():
                 selection = pick
-                game_state == 'fusion'
-                fuse_setup = True 
+                game_state = 'fusion'
+                fuse_setup = True
+                print(f"Fusion: {selection.name}")
             info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI,
-                    pick.LV, pick.SEF, pick.rarity,  pick.tribe, pick.sign, pick.type]
+                    pick.LV, pick.SEF, pick.rarity]
             cat = ['', 'HP ', 'ATK', 'DEF', 'WIS', 'AGI', 'LV ', 'SEF', '']
             for j in range(len(info)):
                 if j == 0:
@@ -360,6 +365,7 @@ while running:
                 else:
                     y_text = yy
                     font_a = Fonts['helv10b']
+                x_text = xx - 50
                 draw_text(f"{cat[j]} {info[j]}", font_a, Colors['white'], x_text, y_text + 18 * j)
             
     if game_state == 'build_menu':
@@ -455,28 +461,38 @@ while running:
                 x_text = xx - 50
                 draw_text(f"{cat[j]} {info[j]}", font_a, Colors['white'], x_text, y_text + 18 * j)
 
-    if game_state == 'fusion'
+    if game_state == 'fusion':
+        if RightClick:
+            RightClick = False
+            game_state = 'main_menu'
         # fusion mechanics
-        if fuse_setup == True:
+        if fuse_setup:
             name_fuse = selection.name
             b_names = list(barracks.keys())
             fuse_dict = {}
             counter = 0
             for n in range(len(b_names)):
-                name_checker = barracks[b_names[n]]
-                if name_fuse == name_checker:
+                a = barracks[b_names[n]]
+                name_checker = a.name
+                if name_fuse == name_checker and selection != a:
                     fuse_dict[counter] = b_names[n]
                     counter += 1
+            check_fuse = [False, ] * counter
             fuse_setup = False  
         for m in range(counter):
-            pick = fuses_dict[m]
+            pick = barracks[fuse_dict[m]]
             logo = Portrait[pick.name]
             columns = 7
-            xx = 70 + space * 1.1 * (n % columns)
-            yy = 100 * (1 + n // columns)
-            if Button(logo, xx, yy, 1):  
+            xx = 100 + space * 1.1 * (m % columns)
+            yy = 100 * (1 + m // columns)
+            if Button(xx, yy, logo, 1).draw() and not buttoncheck:
+                buttoncheck = True
+                check_fuse[m] = not check_fuse[m]
+                print(f"fuse: {fuse_dict[m]}")
+            if check_fuse[m]:
+                screen.blit(Icon['check'], (xx - 73, yy - 15))
             info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI,
-                    pick.LV, pick.SEF, pick.rarity,  pick.tribe, pick.sign, pick.type]
+                    pick.LV, pick.SEF, pick.rarity]
             cat = ['', 'HP ', 'ATK', 'DEF', 'WIS', 'AGI', 'LV ', 'SEF', '']
             for j in range(len(info)):
                 if j == 0:
@@ -485,9 +501,9 @@ while running:
                 else:
                     y_text = yy
                     font_a = Fonts['helv10b']
+                x_text = xx - 50
                 draw_text(f"{cat[j]} {info[j]}", font_a, Colors['white'], x_text, y_text + 18 * j)
-        
-    
+
     if game_state == 'journey':
         # Draw journey background
         if win_count == num_fights:
