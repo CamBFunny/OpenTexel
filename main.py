@@ -516,11 +516,21 @@ while running:
                 draw_text(f"{cat[j]} {info[j]}", font_a, Colors['white'], x_text, y_text + 18 * j)
         if any(check_fuse):
             if Button(500, SCREEN_SIZE[1] - 100, Icon['fuse'], 1).draw() and not buttoncheck:
+                fuse_num = 0
+                fuse_list = {}
+                for k in range(counter):
+                    if check_fuse[k]:
+                        fuse_list[fuse_num] = barracks[b_names[k]]
+                        fuse_num += 1
                 game_state = 'fuse_animation'
                 fuse_timer = 0
 
     if game_state == 'fuse_animation':
         fuse_timer += dt
+        if fuse_time >= 1:
+            for n in range(fuse_num):
+                del barracks[fuse_list[n]]
+                xp += 10
         if fuse_timer >= 3:
             game_state = 'main_menu'
 
