@@ -249,6 +249,8 @@ attack_state = False
 buttoncheck = False
 RightClick = False
 
+win_count = 0
+
 game_state = 'main_menu'
 
 dmg_color = [Colors['orange'], ] * 3
@@ -327,8 +329,16 @@ while running:
         if Button(900, SCREEN_SIZE[1] - 150, Icon['band'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'band_menu'
+        if np.sum(hp_band) > 0:
+            for x in range(3):
+                for y in range(3):
+                    pick = band[x][y]
+                    pos = [band_pos[x][y][0] + 260, band_pos[x][y][1] - 160]
+                    hp_tmp = hp_band[x][y]
+                    screen.blit(Portrait[pick.name], pos)
+                    draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125)
 
-    if game_state == 'journey_menu': 
+    if game_state == 'journey_menu':
         if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 250, Icon['begin'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'journey'
@@ -371,7 +381,8 @@ while running:
     if game_state == 'build_menu':
         if RightClick:
             RightClick = False
-            game_state = 'main_menu'
+            game_state = 'fight_setup'
+            fakeout = True
         if Button(200, 300, Icon['build-pixite'], 1).draw() and not buttoncheck:
             buttoncheck = True
             if pixite >= 5:
@@ -396,7 +407,7 @@ while running:
                 texite -= 5
                 build_texite = True
                 game_state = 'build_state'
-            
+
     if game_state == 'build_state':
         pull = {}
         if build_pixite:
@@ -580,6 +591,9 @@ while running:
                     index = x * 3 + y
                     band[x][y] = barracks[xyz[index]] # Automatically assign band of fighter
                     hp_band[x][y] = band[x][y].HP
+        if fakeout:
+            game_state = 'main_menu'
+            fakeout = False
 
     if game_state == 'fight':
         s = pygame.Surface((540, 545), pygame.SRCALPHA)
@@ -610,6 +624,7 @@ while running:
                     gauge = 100 * hp_tmp / pick.HP
                     rectangle = pygame.Rect(pos[0], pos[1], gauge, 15)
                     pygame.draw.rect(screen, Colors['red'], rectangle)
+                    # Draw band with info
                     draw_text(f"{hp_tmp} HP", Fonts['helv10'], Colors['white'],
                               pos[0] + 3, pos[1] + 3)
                     screen.blit(Portrait[pick.name], pos)
