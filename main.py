@@ -563,13 +563,16 @@ while running:
                 encounter = True
                 enemy_power = 0
                 og_health = [0, 0, 0]
+                enemy_xp = 0
                 for x in range(3):
                     pick = open('Uncommon')
                     enemies[x] = Fighter(pick, pick)
                     Portrait[pick] = image(pick)
-                    enemies[x].HP = random.choice(range(20, 80))
+                    enemies[x].HP = random.choice(range(20, 81))
                     og_health[x] = enemies[x].HP
                     enemies[x].ATK = random.choice(range(1, 6))
+                    enemies[x].XP = (enemies[x].HP / 5) + (enemies[x].ATK / 2)
+                    enemy_xp += enemies[x].XP
                     enemy_power += enemies[x].ATK
         elif encounter and game_state != 'fight':
             # Draw enemies
@@ -685,6 +688,9 @@ while running:
         if victory:
             victory_time += dt
             if victory_time >= 3:
+                for x in range(3):
+                    for y in range(3):
+                        band[x][y].XP += prize_xp
                 win_count += 1
                 encounter = False 
                 game_state = 'journey'
