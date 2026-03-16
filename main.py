@@ -332,6 +332,11 @@ while running:
         if Button(900, SCREEN_SIZE[1] - 150, Icon['band'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'band_menu'
+            band_init = True
+        if 300 < mouse_pos[0] < 900 and 200 < mouse_pos[1] < 500:    # !! Make this the square that shows the band on the home screen
+            if LeftClick:
+                LeftClick = False
+                game_state = 'band_setup'
         if show_band:
             for x in range(3):
                 for y in range(3):
@@ -355,8 +360,8 @@ while running:
             RightClick = False
             game_state = 'main_menu'
         b_keys = list(barracks.keys())
-        band_size = len(b_keys)
-        for n in range(band_size):  
+        barracks_size = len(b_keys)
+        for n in range(barracks_size):  
             tmp = b_keys[n]
             pick = barracks[tmp]
             logo = Portrait[pick.name]
@@ -552,6 +557,46 @@ while running:
         if fuse_timer >= 3:
             game_state = 'fight_setup'
             fakeout = True
+
+    if game_state == 'band_setup':
+        if band_init:
+            reserves = barracks
+            band_init = False
+            for x in range(3):
+                for y in range(3):
+                    del reserves[band[x][y].keyname]  
+        # Display band
+        for x in range(3):
+            for y in range(3):
+                pick = band[x][y]
+                pos = [band_pos[x][y][0] - 50, band_pos[x][y][1] - 160]
+                hp_tmp = hp_band[x][y]
+                screen.blit(Portrait[pick.name], pos)
+                draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125)
+        # Display barracks
+        r_keys = list(reserves.keys())
+        r_size = len(b_keys)
+        for n in range(r_size):  
+            tmp = r_keys[n]
+            pick = reserves[tmp]
+            logo = Portrait[pick.name]
+            columns = 6
+            xx = 100 + space * 1.1 * (n % columns)
+            yy = 100 * (1 + n // columns)
+            if Button(xx, yy, logo, 1).draw():
+                selection = pick  
+            info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI,
+                    pick.LV, pick.SEF, pick.rarity]
+            cat = ['', 'HP ', 'ATK', 'DEF', 'WIS', 'AGI', 'LV ', 'SEF', '']
+            for j in range(len(info)):
+                if j == 0:
+                    y_text = yy - 10
+                    font_a = Fonts['helv20b']
+                else:
+                    y_text = yy
+                    font_a = Fonts['helv10b']
+                x_text = xx - 50
+                draw_text(f"{cat[j]} {info[j]}", font_a, Colors['white'], x_text, y_text + 18 * j)
 
     if game_state == 'journey':
         # Draw journey background
