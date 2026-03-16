@@ -480,7 +480,7 @@ while running:
             game_state = 'main_menu'
         # fusion mechanics
         if fuse_setup:
-            fuse_list = {}
+            fuse_list = []
             fuse_counter = 0
             name_fuse = selection.name
             b_names = list(barracks.keys())
@@ -506,8 +506,9 @@ while running:
                 if not check_fuse[m]:
                     fuse_counter -= 1
                     # Need mechanics to remove checks
+                    fuse_list.remove(pick.keyname)
                 else:
-                    fuse_list.update({fuse_counter: pick.keyname})
+                    fuse_list.append(pick.keyname) 
                     fuse_counter += 1
                 print(fuse_list)
             if check_fuse[m]:
@@ -539,6 +540,7 @@ while running:
                 xp += barracks[fuse_list[n]].XP
                 del barracks[fuse_list[n]]
                 xp += 10
+            xp *= 1 + (.125 * 8)
             selection.XP += xp
             fuse_complete = True
             print(f"{selection.keyname}: {selection.XP}XP")
