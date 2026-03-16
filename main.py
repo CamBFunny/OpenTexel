@@ -482,14 +482,17 @@ while running:
         if fuse_setup:
             fuse_list = []
             fuse_counter = 0
-            name_fuse = selection.name
+            if fuse_type == 'self':
+                name_fuse = [selection.name]
+            elif fuse_type == 'sacrifice':
+                name_fuse = ['Fodder', 'Ikuppi', 'Banunu', 'Sirsir']
             b_names = list(barracks.keys())
             fuse_dict = {}
             counter = 0
             for n in range(len(b_names)):
                 a = barracks[b_names[n]]
                 name_checker = a.name
-                if name_fuse == name_checker and selection != a:
+                if name_checker in name_fuse and selection != a:
                     fuse_dict[counter] = b_names[n]
                     counter += 1
             check_fuse = [False, ] * counter
@@ -524,6 +527,9 @@ while running:
                     font_a = Fonts['helv10b']
                 x_text = xx - 50
                 draw_text(f"{cat[j]} {info[j]}", font_a, Colors['white'], x_text, y_text + 18 * j)
+        if Button(800, SCREEN_SIZE[1] - 100, Icon['fuse'], 1).draw() and not buttoncheck:
+            fuse_type = 'sacrifice'
+            fuse_setup = True
         if fuse_counter > 0:
             if Button(500, SCREEN_SIZE[1] - 100, Icon['fuse'], 1).draw() and not buttoncheck:
                 fuse_num = fuse_counter
