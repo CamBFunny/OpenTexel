@@ -504,13 +504,12 @@ while running:
                 buttoncheck = True
                 check_fuse[m] = not check_fuse[m]
                 if not check_fuse[m]:
-                    fuse_counter -= 1
-                    # Need mechanics to remove checks
+                    fuse_counter -= 1 
                     fuse_list.remove(pick.keyname)
                 else:
                     fuse_list.append(pick.keyname) 
                     fuse_counter += 1
-                print(fuse_list)
+                print(f"Count: {fuse_counter} // {fuse_list}")
             if check_fuse[m]:
                 screen.blit(Icon['check'], (xx - 73, yy - 15))
             info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI,
