@@ -55,8 +55,9 @@ Colors = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 'white'
           'gold': (255, 215, 0)}
 
 class Fighter():
-    def __init__(self, name):
+    def __init__(self, name, keyname):
         self.name = name
+        self.keyname = keyname
         self.HP = 0
         self.ATK = 0
         self.DEF = 0
@@ -64,12 +65,13 @@ class Fighter():
         self.AGI = 0
         self.LV = 1
         self.SEF = 0
+        self.XP = 0
         self.rarity = 'Common'
         self.tribe = 'null'
         self.sign = 'null'
         self.type = 'null'
 
-empty = Fighter('-')
+empty = Fighter('-', 'empty')
 
 band = np.array([[empty,] * 3]*3)
 band_pos = np.array([[[0]*2] * 3]*3)
@@ -248,6 +250,7 @@ enemy_done = False
 attack_state = False
 buttoncheck = False
 RightClick = False
+show_band = False
 
 win_count = 0
 
@@ -329,7 +332,7 @@ while running:
         if Button(900, SCREEN_SIZE[1] - 150, Icon['band'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'band_menu'
-        if np.sum(hp_band) > 0:
+        if show_band:
             for x in range(3):
                 for y in range(3):
                     pick = band[x][y]
@@ -364,7 +367,6 @@ while running:
                 selection = pick
                 game_state = 'fusion'
                 fuse_setup = True
-                print(f"Fusion: {selection.name}")
             info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI,
                     pick.LV, pick.SEF, pick.rarity]
             cat = ['', 'HP ', 'ATK', 'DEF', 'WIS', 'AGI', 'LV ', 'SEF', '']
@@ -430,7 +432,7 @@ while running:
                 p = 1
                 pick = f"{pick}-{p}"
                 p += 1
-            barracks[pick] = Fighter(before)
+            barracks[pick] = Fighter(before, pick)
             barracks[pick].HP = random.choice(range(1, z_n[1]+1))
             if z[n] != 'Common':
                 barracks[pick].HP += 9
@@ -478,6 +480,8 @@ while running:
             game_state = 'main_menu'
         # fusion mechanics
         if fuse_setup:
+            fuse_list = {}
+            fuse_counter = 0
             name_fuse = selection.name
             b_names = list(barracks.keys())
             fuse_dict = {}
@@ -499,7 +503,13 @@ while running:
             if Button(xx, yy, logo, 1).draw() and not buttoncheck:
                 buttoncheck = True
                 check_fuse[m] = not check_fuse[m]
-                print(f"fuse: {fuse_dict[m]}")
+                if not check_fuse[m]:
+                    fuse_counter -= 1
+                    # Need mechanics to remove checks
+                else:
+                    fuse_list.update({fuse_counter: pick.keyname})
+                    fuse_counter += 1
+                print(fuse_list)
             if check_fuse[m]:
                 screen.blit(Icon['check'], (xx - 73, yy - 15))
             info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI,
@@ -514,25 +524,27 @@ while running:
                     font_a = Fonts['helv10b']
                 x_text = xx - 50
                 draw_text(f"{cat[j]} {info[j]}", font_a, Colors['white'], x_text, y_text + 18 * j)
-        if any(check_fuse):
+        if fuse_counter > 0:
             if Button(500, SCREEN_SIZE[1] - 100, Icon['fuse'], 1).draw() and not buttoncheck:
-                fuse_num = 0
-                fuse_list = {}
-                for k in range(counter):
-                    if check_fuse[k]:
-                        fuse_list[fuse_num] = barracks[b_names[k]]
-                        fuse_num += 1
+                fuse_num = fuse_counter
                 game_state = 'fuse_animation'
                 fuse_timer = 0
+                fuse_complete = False
 
     if game_state == 'fuse_animation':
         fuse_timer += dt
-        if fuse_time >= 1:
+        if fuse_timer >= 1 and not fuse_complete:
+            xp = 0
             for n in range(fuse_num):
+                xp += barracks[fuse_list[n]].XP
                 del barracks[fuse_list[n]]
                 xp += 10
+            selection.XP += xp
+            fuse_complete = True
+            print(f"{selection.keyname}: {selection.XP}XP")
         if fuse_timer >= 3:
-            game_state = 'main_menu'
+            game_state = 'fight_setup'
+            fakeout = True
 
     if game_state == 'journey':
         # Draw journey background
@@ -546,7 +558,7 @@ while running:
                 og_health = [0, 0, 0]
                 for x in range(3):
                     pick = open('Uncommon')
-                    enemies[x] = Fighter(pick)
+                    enemies[x] = Fighter(pick, pick)
                     Portrait[pick] = image(pick)
                     enemies[x].HP = random.choice(range(20, 80))
                     og_health[x] = enemies[x].HP
@@ -593,9 +605,12 @@ while running:
         overkill = 0
         frontline = [0, 0, 0]
         swipe_order = [0, ]
-        if win_count == 0:
-            # Temporary band setup, remove once menus work
-            xyz = list(barracks)
+        # Temporary band setup, remove once menus work
+        xyz = list(barracks)
+        if len(xyz) < 9:
+            show_band = False
+        else:
+            show_band = True
             for x in range(3):
                 for y in range(3):
                     index = x * 3 + y
