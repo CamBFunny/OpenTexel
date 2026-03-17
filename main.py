@@ -251,6 +251,7 @@ attack_state = False
 buttoncheck = False
 RightClick = False
 show_band = False
+info_button = False
 
 win_count = 0
 
@@ -258,7 +259,6 @@ game_state = 'main_menu'
 
 dmg_color = [Colors['orange'], ] * 3
 
-#debug
 pixite = 12
 voxite = 7
 doxite = 1
@@ -268,8 +268,39 @@ build_voxite = False
 build_doxite = False
 build_texite = False
 
+#debug
+debug = True
+if debug:
+    game_state = 'band_sort'
+    show_band = True
+    fakeout = True
+    pull = {}
+    z = [['Uncommon', 10, 5]] * 5 + [['Common', 1, 1]] * 3
+    z = z + [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3
+    z = z + [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2
+    z = z + [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2 + [['Legendary', 50, 25]]
+    for n in range(len(z)):
+        z_n = z[n]
+        pick = open(z_n[0])
+        before = pick
+        while pick in barracks.keys():
+            p = 1
+            pick = f"{pick}-{p}"
+            p += 1
+        barracks[pick] = Fighter(before, pick)
+        barracks[pick].HP = random.choice(range(1, z_n[1]+1))
+        if z[n] != 'Common':
+            barracks[pick].HP += 9
+        barracks[pick].ATK = random.choice(range(1, z_n[1]*2+1))
+        barracks[pick].DEF = random.choice(range(1, z_n[1]+1))
+        barracks[pick].WIS = random.choice(range(1, z_n[2]+1))
+        barracks[pick].AGI = random.choice(range(1, z_n[2]+1))
+        Portrait[before] = image(before)
+
+
 while running:
     # CONTROLS
+    mouse_pos = pygame.mouse.get_pos()
     for event in pygame.event.get():
         # Reading Keyboard Input
         if event.type == KEYDOWN:
@@ -337,6 +368,7 @@ while running:
             if LeftClick:
                 LeftClick = False
                 game_state = 'band_setup'
+                band_init = True
         if show_band:
             for x in range(3):
                 for y in range(3):
@@ -345,6 +377,8 @@ while running:
                     hp_tmp = hp_band[x][y]
                     screen.blit(Portrait[pick.name], pos)
                     draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125)
+                    if info_button:
+                        draw_text(f"ATK {pick.ATK}", Fonts['helv15b'], Colors['red'], pos[0] + 25, pos[1] + 95)
 
     if game_state == 'journey_menu':
         if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 250, Icon['begin'], 1).draw() and not buttoncheck:
@@ -352,6 +386,7 @@ while running:
             game_state = 'journey'
             journey_state = True 
             journey_timer = 0
+            swipe_order = [0, ]
             win_count = 0
             num_fights = random.choice(range(1, 4))
 
@@ -388,7 +423,7 @@ while running:
     if game_state == 'build_menu':
         if RightClick:
             RightClick = False
-            game_state = 'fight_setup'
+            game_state = 'band_sort'
             fakeout = True
         if Button(200, 300, Icon['build-pixite'], 1).draw() and not buttoncheck:
             buttoncheck = True
@@ -555,10 +590,13 @@ while running:
             fuse_complete = True
             print(f"{selection.keyname}: {selection.XP}XP")
         if fuse_timer >= 3:
-            game_state = 'fight_setup'
+            game_state = 'band_sort'
             fakeout = True
 
     if game_state == 'band_setup':
+        if RightClick:
+            RightClick = False
+            game_state = 'main_menu'
         if band_init:
             reserves = barracks
             band_init = False
@@ -569,19 +607,19 @@ while running:
         for x in range(3):
             for y in range(3):
                 pick = band[x][y]
-                pos = [band_pos[x][y][0] - 50, band_pos[x][y][1] - 160]
+                pos = [band_pos[x][y][0]/2 - 50, band_pos[x][y][1]/2 - 80]
                 hp_tmp = hp_band[x][y]
                 screen.blit(Portrait[pick.name], pos)
                 draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125)
         # Display barracks
         r_keys = list(reserves.keys())
-        r_size = len(b_keys)
+        r_size = len(r_keys)
         for n in range(r_size):  
             tmp = r_keys[n]
             pick = reserves[tmp]
             logo = Portrait[pick.name]
-            columns = 6
-            xx = 100 + space * 1.1 * (n % columns)
+            columns = 5
+            xx = 300 + space * 1.1 * (n % columns)
             yy = 100 * (1 + n // columns)
             if Button(xx, yy, logo, 1).draw():
                 selection = pick  
@@ -622,8 +660,8 @@ while running:
         elif encounter and game_state != 'fight':
             # Draw enemies
             if Button(50, 50, Icon['fight'], 1).draw() and not buttoncheck:
+                game_state = 'fight'
                 buttoncheck = True
-                game_state = 'fight_setup'
 
     if game_state == 'journey_complete':
         journey_timer += dt
@@ -655,25 +693,25 @@ while running:
             fail_time = 0
             game_state = 'main_menu'
 
-    if game_state == 'fight_setup':
-        game_state = 'fight'
+    if game_state == 'band_sort':
+        game_state = 'main_menu'
         overkill = 0
         frontline = [0, 0, 0]
-        swipe_order = [0, ]
-        # Temporary band setup, remove once menus work
-        xyz = list(barracks)
-        if len(xyz) < 9:
-            show_band = False
-        else:
-            show_band = True
-            for x in range(3):
-                for y in range(3):
-                    index = x * 3 + y
-                    band[x][y] = barracks[xyz[index]] # Automatically assign band of fighter
-                    hp_band[x][y] = band[x][y].HP
-        if fakeout:
-            game_state = 'main_menu'
-            fakeout = False
+        # Sort by strength
+        sort_dict = {}
+        xyz = list(barracks.keys())
+        for k in range(len(xyz)):
+            x_name = xyz[k]
+            sort_dict[x_name] = barracks[x_name].ATK
+        sort_dict = dict(sorted(sort_dict.items(),
+                                        key=lambda item: item[1], reverse=True))
+        sorted_names = list(sort_dict.keys())
+        lineup = np.array([[3, 1, 4], [5, 0, 6], [7, 2, 8]])
+        for x in range(3):
+            for y in range(3):
+                index = lineup[x][y]
+                band[x][y] = barracks[sorted_names[index]] # Automatically assign band of fighter
+                hp_band[x][y] = band[x][y].HP
 
     if game_state == 'fight':
         s = pygame.Surface((540, 545), pygame.SRCALPHA)
@@ -735,7 +773,7 @@ while running:
             if victory_time >= 3:
                 for x in range(3):
                     for y in range(3):
-                        band[x][y].XP += prize_xp
+                        band[x][y].XP += enemy_xp
                 win_count += 1
                 encounter = False 
                 game_state = 'journey'
