@@ -623,7 +623,15 @@ while running:
                 pos = [band_pos[x][y][0]/2 - 50, band_pos[x][y][1]/2 - 80]
                 hp_tmp = hp_band[x][y]
                 screen.blit(Portrait[pick.name], pos)
-                draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125)
+                if Button(pos[0], pos[1], Portait[pick.name], 1).draw() and not buttoncheck:
+                    buttoncheck = True
+                    swap_x = x
+                    swap_y = y
+                draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125) 
+        rx = band_pos[swap_x][swap_y][0]
+        ry = band_pos[swap_x][swap_y][1]
+        rectangle = pygame.Rect(rx - 5, ry - 15, space + 5, space + 5)
+        pygame.draw.rect(screen, Colors['red'], rectangle, 4)
         # Display barracks
         r_keys = list(reserves.keys())
         r_size = len(r_keys)
@@ -837,6 +845,8 @@ while running:
                             (rx - space * 3.2, ry + space * 2.5), (rx - space * 2.5, ry + space * 3.2)]
                 pygame.draw.polygon(screen, swipe_colors[x], vertices, 4)  # Draw the polygon
             pygame.draw.rect(screen, swipe_colors[x], rectangle, 4)
+
+
 
         if frontline[0] != 0:
             attack_order[queue] = frontline
