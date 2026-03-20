@@ -167,7 +167,7 @@ for n in range(db_columns):
 
 fighters = list(fighter_dict.keys())
 num_fighters = len(fighters)
-common_pack = ['Fodder'] * 90 + ['Ikkupi'] * 6 + ['Banunu'] * 3 + ['Sirsir'] * 1
+common_pack = ['Fodder'] * 190 + ['Ikkupi'] * 10 + ['Banunu'] * 4 + ['Sirsir'] * 1
 uncommon_pack = []
 rare_pack = []
 epic_pack = []
@@ -239,6 +239,9 @@ def open(box):
 
     return value
 
+# Initialize Variables
+fuse_type = 'self'
+# Boolean
 LeftHold = False
 LeftClick = False
 strike = False
@@ -252,6 +255,7 @@ buttoncheck = False
 RightClick = False
 show_band = False
 info_button = False
+
 
 win_count = 0
 
@@ -275,10 +279,9 @@ if debug:
     show_band = True
     fakeout = True
     pull = {}
-    z = [['Uncommon', 10, 5]] * 5 + [['Common', 1, 1]] * 3
+    z = [['Uncommon', 10, 5]] * 5 + [['Common', 1, 1]] * 9
     z = z + [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3
     z = z + [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2
-    z = z + [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2 + [['Legendary', 50, 25]]
     for n in range(len(z)):
         z_n = z[n]
         pick = open(z_n[0])
@@ -542,17 +545,18 @@ while running:
             logo = Portrait[pick.name]
             columns = 7
             xx = 100 + space * 1.1 * (m % columns)
-            yy = 100 * (1 + m // columns)
+            yy = 100 * (1 + 1.5 * (m // columns))
             if Button(xx, yy, logo, 1).draw() and not buttoncheck:
-                buttoncheck = True
-                check_fuse[m] = not check_fuse[m]
-                if not check_fuse[m]:
-                    fuse_counter -= 1 
-                    fuse_list.remove(pick.keyname)
-                else:
-                    fuse_list.append(pick.keyname) 
-                    fuse_counter += 1
-                print(f"Count: {fuse_counter} // {fuse_list}")
+                if fuse_counter < 8:
+                    buttoncheck = True
+                    check_fuse[m] = not check_fuse[m]
+                    if not check_fuse[m]:
+                        fuse_counter -= 1
+                        fuse_list.remove(pick.keyname)
+                    else:
+                        fuse_list.append(pick.keyname)
+                        fuse_counter += 1
+                    print(f"Count: {fuse_counter} // {fuse_list}")
             if check_fuse[m]:
                 screen.blit(Icon['check'], (xx - 73, yy - 15))
             info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI,
@@ -568,7 +572,11 @@ while running:
                 x_text = xx - 50
                 draw_text(f"{cat[j]} {info[j]}", font_a, Colors['white'], x_text, y_text + 18 * j)
         if Button(800, SCREEN_SIZE[1] - 100, Icon['fuse'], 1).draw() and not buttoncheck:
-            fuse_type = 'sacrifice'
+            buttoncheck = True
+            if fuse_type == 'self':
+                fuse_type = 'sacrifice'
+            else:
+                fuse_type = 'self'
             fuse_setup = True
         if fuse_counter > 0:
             if Button(500, SCREEN_SIZE[1] - 100, Icon['fuse'], 1).draw() and not buttoncheck:
@@ -585,7 +593,12 @@ while running:
                 xp += barracks[fuse_list[n]].XP
                 del barracks[fuse_list[n]]
                 xp += 10
-            xp *= 1 + (.125 * 8)
+            if fuse_num == 8:
+                mult_xp = 2
+                xp *= 2
+            else:
+                mult_xp = 1 + (.125 * (fuse_num - 1))
+            xp *= mult_xp
             selection.XP += xp
             fuse_complete = True
             print(f"{selection.keyname}: {selection.XP}XP")
