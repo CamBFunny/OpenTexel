@@ -620,15 +620,16 @@ while running:
             selection = empty
             for x in range(3):
                 for y in range(3):
-                    del reserves[band[x][y].keyname]  
+                    name_key = band[x][y].keyname
+                    if name_key in reserves:
+                        del reserves[band[x][y].keyname]
         # Display band
         for x in range(3):
             for y in range(3):
                 pick = band[x][y]
                 pos = [band_pos[x][y][0]/2 - 50, band_pos[x][y][1]/2 - 80]
                 hp_tmp = hp_band[x][y]
-                screen.blit(Portrait[pick.name], pos)
-                if Button(pos[0], pos[1], Portait[pick.name], 1).draw() and not buttoncheck:
+                if Button(pos[0], pos[1], Portrait[pick.name], 1).draw() and not buttoncheck:
                     buttoncheck = True
                     if swap_x != x and swap_y != y:
                         swap_x = x
@@ -662,7 +663,7 @@ while running:
                     selection = empty
             if selection.keyname == tmp:
                 selection_made = True
-                rectangle = pygame.Rect(rx - 5, ry - 15, space + 5, space + 5)
+                rectangle = pygame.Rect(xx - 5, yy - 15, space + 5, space + 5)
                 pygame.draw.rect(screen, Colors['red'], rectangle, 4)
             info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI,
                     pick.LV, pick.SEF, pick.rarity]
@@ -676,8 +677,11 @@ while running:
                     font_a = Fonts['helv10b']
                 x_text = xx - 50
                 draw_text(f"{cat[j]} {info[j]}", font_a, Colors['white'], x_text, y_text + 18 * j)
-            if swap_ready and selection_made: 
+            if swap_ready and selection_made:
+                swap_ready = False
+                selection_made = False
                 band[x][y] = selection
+                print(reserves)
                 band_init = True
                 
 
