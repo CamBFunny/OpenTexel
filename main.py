@@ -1,13 +1,5 @@
-import pygame
-import data
-import time
-import numpy as np
-import os
-import random
-import pandas as pd
-import inspect
-import asyncio
-import math
+import pygame, data, time, numpy as np, os
+import random, pandas as pd, inspect, asyncio, math
 
 from pygame.examples.music_drop_fade import SCREEN_SIZE
 # Import buttons
@@ -19,9 +11,9 @@ from pygame.locals import (KEYDOWN, QUIT, KEYUP, K_LCTRL,
                            K_z, K_x, K_c, K_v, K_b)
 
 # Screen settings
-resolution = 1             # Set window size; 16:9 ratio .8-720p .6-540p .5~480p
-SCREEN_SIZE = [int(1280 * resolution), int(800 * resolution)]
-screen = pygame.display.set_mode([SCREEN_SIZE[0], SCREEN_SIZE[1]])
+RESOLUTION_MOBILE= [int(540), int(960)]
+SCREEN_SIZE = [int(1280), int(800)]
+screen = pygame.display.set_mode(SCREEN_SIZE)
 
 running = True
 keys_pressed = set()
@@ -139,7 +131,7 @@ def swipe(pressed):
         return tmp
 
 # Images
-background = pygame.image.load(f"lib/images/background.png")
+background = pygame.image.load(f"lib/images/home_menu.png")
 sz = background.get_size()
 scl = SCREEN_SIZE[0] / sz[0]
 background = pygame.transform.scale(background, (sz[0] * scl, sz[1] * scl))
@@ -350,7 +342,7 @@ while running:
 
     # Draw Screen
     screen.fill((5, 5, 10))
-    screen.blit(background, (0, -200))
+    screen.blit(background, (0, 0))
 
     if game_state == 'main_menu':
         stash = [pixite, voxite, doxite, texite]
