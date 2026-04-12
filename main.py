@@ -30,7 +30,7 @@ frame_counter = 0
 mouse_pos = pygame.mouse.get_pos()
 
 Fonts = {}
-fsizes = range(10, 70, 5)
+fsizes = range(10, 70, 1)
 
 # Fonts
 for i in fsizes:
@@ -44,7 +44,7 @@ Colors = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 'white'
           'yellow': (255, 255, 0), 'orange': (255, 150, 0), 'pink': (255, 0, 150),
           'purple': (150, 0, 255), 'cyan': (0, 255, 255), 'teal': (0, 150, 255),
           'lime': (150, 255, 0), 'seafoam': (0, 255, 150), 'magenta': (255, 0, 255),
-          'gold': (255, 215, 0)}
+          'gold': (255, 215, 0), 'black': (0, 0, 0), 'silver': (240, 240, 240)}
 
 class Fighter():
     def __init__(self, name, keyname):
@@ -68,9 +68,9 @@ empty = Fighter('-', 'empty')
 band = np.array([[empty,] * 3]*3)
 band_pos = np.array([[[0]*2] * 3]*3)
 hp_band = np.array([[0,] * 3]*3)
-space = 160
+space = 180
 bx = 100
-by = 200
+by = 220
 enemies_pos = np.array([[0]*2] * 3)
 for x in range(3):
     enemies_pos[x] = [SCREEN_SIZE[0] - 300, by + 30 + space * x]
@@ -130,21 +130,31 @@ def swipe(pressed):
             tmp[n] = band[2 - n][n]
         return tmp
 
-# Images
-background = pygame.image.load(f"lib/images/home_menu.png")
-sz = background.get_size()
-scl = SCREEN_SIZE[0] / sz[0]
-background = pygame.transform.scale(background, (sz[0] * scl, sz[1] * scl))
+import os
+filelist=os.listdir('lib/images')
+counter = 0
+for fichier in filelist[:]: # filelist[:] makes a copy of filelist.
+    if not(fichier.endswith(".png")):
+        filelist.remove(fichier)
+    else:
+        filelist[counter] = filelist[counter].replace(".png", "")
+        counter += 1
 
 Icon = {}
-pic_list = ['fight', 'journey', 'build', 'begin', 'continue', 'build-pixite',
-            'build-voxite', 'build-doxite', 'build-texite', 'band', 'check', 'fuse']
-for n in pic_list:
+for n in filelist:
     Icon[n] = pygame.image.load(f"lib/images/{n}.png")
 
 sz = Icon['check'].get_size()
 scl = 22
 Icon['check'] = pygame.transform.scale(Icon['check'], (sz[0]/scl, sz[1]/scl))
+
+# Images
+panes = Icon['hm-panes']
+background = Icon['backdrop-1']
+sz = background.get_size()
+scl = SCREEN_SIZE[0] / sz[0]
+background = pygame.transform.scale(background, (sz[0] * scl, sz[1] * scl))
+panes = pygame.transform.scale(panes, (sz[0] * scl, sz[1] * scl))
 
 # ODS Import code
 file_path = 'db_texel.ods'
@@ -258,11 +268,11 @@ dmg_color = [Colors['orange'], ] * 3
 pixite = 12
 voxite = 7
 doxite = 1
-texite = 0
+tyxite = 0
 build_pixite = False
 build_voxite = False
 build_doxite = False
-build_texite = False
+build_tyxite = False
 
 #debug
 debug = True
@@ -343,19 +353,25 @@ while running:
     # Draw Screen
     screen.fill((5, 5, 10))
     screen.blit(background, (0, 0))
+    screen.blit(panes, (0, 0))
+
+    if game_state == 'main_menu' or 'build_menu':
+        stash = [pixite, voxite, doxite, tyxite]
+        s_names = ['pixite', 'voxite', 'doxite', 'tyxite']
+        clr = [Colors['orange'], Colors['silver'], Colors['yellow'], Colors['red']]
+        for p in range(4):
+            draw_text(f"x{stash[p]}", Fonts['helv22b'], clr[p], 1200, 90 + 40 * p)
+            screen.blit(Icon[s_names[p]], (1130, 70 + 40 * p))
 
     if game_state == 'main_menu':
-        stash = [pixite, voxite, doxite, texite]
-        clr = [Colors['orange'], Colors['white'], Colors['yellow'], Colors['blue']]
-        for p in range(4):
-            draw_text(f"x{stash[p]}", Fonts['helv20b'], clr[p], 1100, 100 + 30 * p)
-        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['journey'], 1).draw() and not buttoncheck:
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 68, Icon['journey'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'journey_menu'
-        if Button(200, SCREEN_SIZE[1] - 50, Icon['build'], 1).draw() and not buttoncheck:
+        y_btn = 65
+        if Button(285, SCREEN_SIZE[1] - y_btn, Icon['build'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'build_menu'
-        if Button(900, SCREEN_SIZE[1] - 150, Icon['band'], 1).draw() and not buttoncheck:
+        if Button(1000, SCREEN_SIZE[1] - y_btn, Icon['band'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'band_menu'
             band_init = True
@@ -371,7 +387,7 @@ while running:
                     pos = [band_pos[x][y][0] + 260, band_pos[x][y][1] - 160]
                     hp_tmp = hp_band[x][y]
                     screen.blit(Portrait[pick.name], pos)
-                    draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125)
+                    draw_text(f"LV {pick.LV} {pick.name}", Fonts['helv18b'], Colors['black'], pos[0] + 25, pos[1] + 130)
                     if info_button:
                         draw_text(f"ATK {pick.ATK}", Fonts['helv15b'], Colors['red'], pos[0] + 25, pos[1] + 95)
 
@@ -420,29 +436,33 @@ while running:
             RightClick = False
             game_state = 'band_sort'
             fakeout = True
-        if Button(200, 300, Icon['build-pixite'], 1).draw() and not buttoncheck:
+        x1 = 360
+        y1 = 250
+        if Button(x1, y1, Icon['build-pixite'], 1).draw() and not buttoncheck:
             buttoncheck = True
             if pixite >= 5:
                 pixite -= 5
                 build_pixite = True
                 game_state = 'build_state'
-        if Button(200, SCREEN_SIZE[1] - 300, Icon['build-voxite'], 1).draw() and not buttoncheck:
+        y2 = SCREEN_SIZE[1] - 300
+        if Button(x1, y2, Icon['build-voxite'], 1).draw() and not buttoncheck:
             buttoncheck = True
             if voxite >= 5:
                 voxite -= 5
                 build_voxite = True
                 game_state = 'build_state'
-        if Button(SCREEN_SIZE[0] - 300, 300, Icon['build-doxite'], 1).draw() and not buttoncheck:
+        x2 = SCREEN_SIZE[0] - 400
+        if Button(x2, y1, Icon['build-doxite'], 1).draw() and not buttoncheck:
             buttoncheck = True
             if doxite >= 5:
                 doxite -= 5
                 build_doxite = True
                 game_state = 'build_state'
-        if Button(SCREEN_SIZE[0] - 300, SCREEN_SIZE[1] - 300, Icon['build-texite'], 1).draw() and not buttoncheck:
+        if Button(x2, y2, Icon['build-tyxite'], 1).draw() and not buttoncheck:
             buttoncheck = True
-            if texite >= 5:
-                texite -= 5
-                build_texite = True
+            if tyxite >= 5:
+                tyxite -= 5
+                build_tyxite = True
                 game_state = 'build_state'
 
     if game_state == 'build_state':
@@ -456,9 +476,9 @@ while running:
         if build_doxite:
             z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2
             build_doxite = False
-        if build_texite:
+        if build_tyxite:
             z = [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2 + [['Legendary', 50, 25]]
-            build_texite = False
+            build_tyxite = False
         for n in range(len(z)):
             z_n = z[n]
             pick = open(z_n[0])
@@ -714,7 +734,7 @@ while running:
             pixite += prize[0] // odds[0]
             voxite += prize[1] // odds[1]
             doxite += prize[2] // odds[2]
-            texite += prize[3] // odds[3]
+            tyxite += prize[3] // odds[3]
             claimed = True
         draw_text(f"Journey Complete", Fonts['helv50b'], Colors['white'], 460, 250)
         clr = [Colors['orange'], Colors['white'], Colors['yellow'], Colors['blue']]
