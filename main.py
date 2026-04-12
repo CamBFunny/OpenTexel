@@ -258,8 +258,10 @@ RightClick = False
 show_band = False
 info_button = False
 
-
 win_count = 0
+energy = 100
+experience = 0
+next_class = 100
 
 game_state = 'main_menu'
 
@@ -355,6 +357,14 @@ while running:
     screen.blit(background, (0, 0))
     screen.blit(panes, (0, 0))
 
+    gauge = 74 * energy / 100
+    rectangle = pygame.Rect(283, 21, gauge, 16)
+    pygame.draw.rect(screen, (20, 210, 20), rectangle)
+
+    gauge = 74 * experience / next_class
+    rectangle = pygame.Rect(128, 21, gauge, 16)
+    pygame.draw.rect(screen, (20, 20, 210), rectangle)
+
     if game_state == 'main_menu' or 'build_menu':
         stash = [pixite, voxite, doxite, tyxite]
         s_names = ['pixite', 'voxite', 'doxite', 'tyxite']
@@ -414,7 +424,8 @@ while running:
             columns = 7
             xx = 100 + space * 1.1 * (n % columns)
             yy = 100 * (1 + n // columns)
-            if Button(xx, yy, logo, 1).draw():
+            if Button(xx, yy, logo, 1).draw() and not buttoncheck:
+                buttoncheck = True
                 selection = pick
                 game_state = 'fusion'
                 fuse_setup = True
@@ -513,8 +524,8 @@ while running:
         for n in range(num_display):
             pull_n = pull[n]
             logo_result = Portrait[pull_n.name]
-            xx = 110 + space * 1.5 * (n % 5)
-            yy = 70 + 230 * (n // 5)
+            xx = 110 + space * 1.5 * (n % 4)
+            yy = 110 + 230 * (n // 4)
             screen.blit(logo_result, (xx, yy))
             info = [pull_n.name, pull_n.HP, pull_n.ATK, pull_n.DEF, pull_n.WIS, pull_n.AGI,
                     pull_n.LV, pull_n.SEF, pull_n.rarity]
@@ -667,7 +678,8 @@ while running:
             columns = 5
             xx = 300 + space * 1.1 * (n % columns)
             yy = 100 * (1 + n // columns)
-            if Button(xx, yy, logo, 1).draw():
+            if Button(xx, yy, logo, 1).draw() and not buttoncheck:
+                buttoncheck = True
                 if selection != pick:
                     selection = pick  
                 else:
@@ -715,7 +727,7 @@ while running:
                     enemies[x].HP = random.choice(range(20, 81))
                     og_health[x] = enemies[x].HP
                     enemies[x].ATK = random.choice(range(1, 6))
-                    enemies[x].XP = (enemies[x].HP / 5) + (enemies[x].ATK / 2)
+                    enemies[x].XP = int((enemies[x].HP / 5) + (enemies[x].ATK / 2))
                     enemy_xp += enemies[x].XP
                     enemy_power += enemies[x].ATK
         elif encounter and game_state != 'fight':
@@ -834,7 +846,10 @@ while running:
             if victory_time >= 3:
                 for x in range(3):
                     for y in range(3):
-                        band[x][y].XP += enemy_xp
+                        mod = 1
+                        if band[x][y].XP > 0:   # If member is dead, half experience
+                            mod = 0.5
+                        band[x][y].XP += enemy_xp * mod
                 win_count += 1
                 encounter = False 
                 game_state = 'journey'
