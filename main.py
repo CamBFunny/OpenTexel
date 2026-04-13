@@ -14,6 +14,7 @@ from pygame.locals import (KEYDOWN, QUIT, KEYUP, K_LCTRL,
 RESOLUTION_MOBILE= [int(540), int(960)]
 SCREEN_SIZE = [int(1280), int(800)]
 screen = pygame.display.set_mode(SCREEN_SIZE)
+center = (SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 2)
 
 running = True
 keys_pressed = set()
@@ -44,7 +45,7 @@ Colors = {'red': (255, 0, 0), 'green': (0, 255, 0), 'blue': (0, 0, 255), 'white'
           'yellow': (255, 255, 0), 'orange': (255, 150, 0), 'pink': (255, 0, 150),
           'purple': (150, 0, 255), 'cyan': (0, 255, 255), 'teal': (0, 150, 255),
           'lime': (150, 255, 0), 'seafoam': (0, 255, 150), 'magenta': (255, 0, 255),
-          'gold': (255, 215, 0), 'black': (0, 0, 0), 'silver': (240, 240, 240)}
+          'gold': (255, 215, 0), 'black': (0, 0, 0), 'silver': (240, 240, 240), 'grey': (150, 150, 150)}
 
 class Fighter():
     def __init__(self, name, keyname):
@@ -262,6 +263,7 @@ win_count = 0
 energy = 100
 experience = 0
 next_class = 100
+HoldStart = 0
 
 game_state = 'main_menu'
 
@@ -402,7 +404,7 @@ while running:
                         draw_text(f"ATK {pick.ATK}", Fonts['helv15b'], Colors['red'], pos[0] + 25, pos[1] + 95)
 
     if game_state == 'journey_menu':
-        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 250, Icon['begin'], 1).draw() and not buttoncheck:
+        if Button(center[0], center[1], Icon['begin'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'journey'
             journey_state = True 
@@ -710,12 +712,18 @@ while running:
                 
 
     if game_state == 'journey':
-        # Draw journey background
+        # Journey progress bar
+        journey_bar = 220
+        rectangle = pygame.Rect(500, 600, journey_bar, 25)
+        pygame.draw.rect(screen, Colors['grey'], rectangle)
+        progress = (win_count * 3 + journey_timer)
+        gauge = journey_bar * progress / (3 * num_fights)
+        rectangle = pygame.Rect(500, 600, gauge, 25)
         if win_count == num_fights:
             game_state = 'journey_complete'
         elif not encounter:
             journey_timer += dt
-            if journey_timer >= (3 / num_fights + random.choice(range(0, 10)) / 10):
+            if journey_timer >= 3:
                 encounter = True
                 enemy_power = 0
                 og_health = [0, 0, 0]
@@ -731,10 +739,13 @@ while running:
                     enemy_xp += enemies[x].XP
                     enemy_power += enemies[x].ATK
         elif encounter and game_state != 'fight':
+            gauge = journey_bar * (win_count + 1) / num_fights
+            rectangle = pygame.Rect(500, 600, gauge, 25)
             # Draw enemies
-            if Button(50, 50, Icon['fight'], 1).draw() and not buttoncheck:
+            if Button(center[0], center[1], Icon['fight'], 1).draw() and not buttoncheck:
                 game_state = 'fight'
                 buttoncheck = True
+        pygame.draw.rect(screen, Colors['cyan'], rectangle)
 
     if game_state == 'journey_complete':
         journey_timer += dt
