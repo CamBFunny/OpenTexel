@@ -8,4 +8,4 @@ I will be using the [official Wiki](https://defenderoftexel.fandom.com/wiki/Defe
 * ~~Art for home screen~~
 * Animations for fusions
 * Polish band menu
-* Animate band walking during journy
+* Animate band walking during journey
