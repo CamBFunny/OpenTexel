@@ -386,12 +386,8 @@ while running:
         if Button(1000, SCREEN_SIZE[1] - y_btn, Icon['band'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'band_menu'
+            scroll = 0
             band_init = True
-        if 300 < mouse_pos[0] < 900 and 200 < mouse_pos[1] < 500:    # !! Make this the square that shows the band on the home screen
-            if LeftClick:
-                LeftClick = False
-                game_state = 'band_setup'
-                band_init = True
         if show_band:
             for x in range(3):
                 for y in range(3):
@@ -404,7 +400,10 @@ while running:
                         draw_text(f"ATK {pick.ATK}", Fonts['helv15b'], Colors['red'], pos[0] + 25, pos[1] + 95)
 
     if game_state == 'journey_menu':
-        if Button(center[0], center[1], Icon['begin'], 1).draw() and not buttoncheck:
+        if RightClick:
+            RightClick = False
+            game_state = 'main_menu'
+        if Button(center[0], center[1] + 200, Icon['begin'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'journey'
             journey_state = True 
@@ -413,13 +412,13 @@ while running:
             win_count = 0
             num_fights = random.choice(range(1, 4))
 
-    if game_state == 'band_menu':
+    if game_state == 'fuse_setup':
         if RightClick:
             RightClick = False
-            game_state = 'main_menu'
+            game_state = 'band_menu'
         b_keys = list(barracks.keys())
         barracks_size = len(b_keys)
-        for n in range(barracks_size):  
+        for n in range(barracks_size):
             tmp = b_keys[n]
             pick = barracks[tmp]
             logo = Portrait[pick.name]
@@ -545,7 +544,7 @@ while running:
     if game_state == 'fusion':
         if RightClick:
             RightClick = False
-            game_state = 'main_menu'
+            game_state = 'band_menu'
         # fusion mechanics
         if fuse_setup:
             fuse_list = []
@@ -631,7 +630,10 @@ while running:
             game_state = 'band_sort'
             fakeout = True
 
-    if game_state == 'band_setup':
+    if game_state == 'band_menu':
+        if Button(1000, SCREEN_SIZE[1] - y_btn, Icon['band'], 1).draw() and not buttoncheck:
+            buttoncheck = True
+            game_state = 'fuse_setup'
         if RightClick:
             RightClick = False
             game_state = 'main_menu'
@@ -652,7 +654,7 @@ while running:
         for x in range(3):
             for y in range(3):
                 pick = band[x][y]
-                pos = [band_pos[x][y][0]/2 - 50, band_pos[x][y][1]/2 - 80]
+                pos = [band_pos[x][y][0]/2, band_pos[x][y][1]/2 - 80]
                 hp_tmp = hp_band[x][y]
                 if Button(pos[0], pos[1], Portrait[pick.name], 1).draw() and not buttoncheck:
                     buttoncheck = True
@@ -673,12 +675,29 @@ while running:
         # Display barracks
         r_keys = list(reserves.keys())
         r_size = len(r_keys)
-        for n in range(r_size):  
-            tmp = r_keys[n]
+        og_size = len(r_keys)
+        columns = 4
+        rows = 5
+        area = columns * rows
+        if r_size > area:
+            r_size = area
+            if K_s in keys_pressed:
+                keys_pressed.remove(K_s)
+                limit = og_size // columns - columns
+                print(limit)
+                if scroll < limit:
+                    scroll += 1
+            if K_w in keys_pressed and scroll > 0:
+                keys_pressed.remove(K_w)
+                scroll -= 1
+        x_s = (rows + scroll) * columns
+        if x_s > og_size:   # Trim the size
+            r_size -= (x_s - og_size)
+        for n in range(r_size):
+            tmp = r_keys[n + scroll * columns]
             pick = reserves[tmp]
             logo = Portrait[pick.name]
-            columns = 5
-            xx = 300 + space * 1.1 * (n % columns)
+            xx = 500 + space * 1.1 * (n % columns)
             yy = 100 * (1 + n // columns)
             if Button(xx, yy, logo, 1).draw() and not buttoncheck:
                 buttoncheck = True
@@ -760,7 +779,7 @@ while running:
             tyxite += prize[3] // odds[3]
             claimed = True
         draw_text(f"Journey Complete", Fonts['helv50b'], Colors['white'], 460, 250)
-        clr = [Colors['orange'], Colors['white'], Colors['yellow'], Colors['blue']]
+        clr = [Colors['orange'], Colors['white'], Colors['yellow'], Colors['red']]
         for p in range(4):
             draw_text(f"+{prize[p] // odds[p]}", Fonts['helv40b'], clr[p], 500, 300 + 40 * p)
         if journey_timer >= 3:
