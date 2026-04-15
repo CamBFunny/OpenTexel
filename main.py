@@ -1,7 +1,6 @@
 import pygame, data, time, numpy as np, os
 import random, pandas as pd, inspect, asyncio, math
 
-from pygame.examples.music_drop_fade import SCREEN_SIZE
 # Import buttons
 from pygame.locals import (KEYDOWN, QUIT, KEYUP, K_LCTRL,
     K_UP, K_DOWN, K_LEFT, K_RIGHT, K_ESCAPE, K_TAB, K_LSHIFT, K_SPACE,
@@ -229,6 +228,7 @@ def colorize(photo, newColor):
 
 
 def open(box):
+    global value
     if box == 'Common':
         value = random.choice(common_pack)
     elif box == 'Uncommon':
@@ -256,6 +256,7 @@ enemy_done = False
 attack_state = False
 buttoncheck = False
 RightClick = False
+MiddleClick = False
 show_band = False
 info_button = False
 
@@ -264,6 +265,23 @@ energy = 100
 experience = 0
 next_class = 100
 HoldStart = 0
+death_time = 0
+
+num_display = num_total = results_timer = 0
+fuse_counter = fuse_num = fuse_timer = 0
+swap_x = swap_y = scroll = x = y = xx = 0
+journey_timer = num_fights = fail_time = 0
+victory_time = enemy_xp = overkill = 0
+band_init = fuse_complete = fuse_setup = False
+swap_ready = selection_made = False
+claimed = False
+selection = empty
+name_fuse = ['Fodder', 'Ikuppi', 'Banunu', 'Sirsir']
+pull = fuse_dict = reserves = {}
+check_fuse = fuse_list = prize = odds = []
+og_health = damage = []
+
+y_btn = 65  # build button
 
 game_state = 'main_menu'
 
@@ -279,7 +297,7 @@ build_doxite = False
 build_tyxite = False
 
 #debug
-debug = True
+debug = False
 if debug:
     game_state = 'band_sort'
     show_band = True
@@ -379,7 +397,6 @@ while running:
         if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 68, Icon['journey'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'journey_menu'
-        y_btn = 65
         if Button(285, SCREEN_SIZE[1] - y_btn, Icon['build'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'build_menu'
@@ -482,15 +499,17 @@ while running:
         if build_pixite:
             z = [['Uncommon', 10, 5]] * 5 + [['Common', 1, 1]] * 3
             build_pixite = False
-        if build_voxite:
+        elif build_voxite:
             z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3
             build_voxite = False
-        if build_doxite:
+        elif build_doxite:
             z = [['Uncommon', 10, 5]] * 5 + [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2
             build_doxite = False
-        if build_tyxite:
+        elif build_tyxite:
             z = [['Rare', 20, 10]] * 3 + [['Epic', 30, 15]] * 2 + [['Legendary', 50, 25]]
             build_tyxite = False
+        else:
+            z = []
         for n in range(len(z)):
             z_n = z[n]
             pick = open(z_n[0])
