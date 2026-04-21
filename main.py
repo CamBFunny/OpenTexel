@@ -140,21 +140,26 @@ for fichier in filelist[:]: # filelist[:] makes a copy of filelist.
         filelist[counter] = filelist[counter].replace(".png", "")
         counter += 1
 
-Icon = {}
+Png = {}
 for n in filelist:
-    Icon[n] = pygame.image.load(f"lib/images/{n}.png")
+    Png[n] = pygame.image.load(f"lib/images/{n}.png")
 
-sz = Icon['check'].get_size()
+sz = Png['check'].get_size()
 scl = 22
-Icon['check'] = pygame.transform.scale(Icon['check'], (sz[0]/scl, sz[1]/scl))
+Png['check'] = pygame.transform.scale(Png['check'], (sz[0]/scl, sz[1]/scl))
 
 # Images
-panes = Icon['hm-panes']
-background = Icon['backdrop-1']
+panes = Png['hm-panes']
+background = Png['backdrop-1']
 sz = background.get_size()
 scl = SCREEN_SIZE[0] / sz[0]
 background = pygame.transform.scale(background, (sz[0] * scl, sz[1] * scl))
 panes = pygame.transform.scale(panes, (sz[0] * scl, sz[1] * scl))
+
+panes_build = Png['build-panes']
+bkg_build = Png['bkg-build']
+bkg_build = pygame.transform.scale(bkg_build, (sz[0] * scl, sz[1] * scl))
+panes_build = pygame.transform.scale(panes_build, (sz[0] * scl, sz[1] * scl))
 
 # ODS Import code
 file_path = 'db_texel.ods'
@@ -297,7 +302,7 @@ build_doxite = False
 build_tyxite = False
 
 #debug
-debug = False
+debug = True
 if debug:
     game_state = 'band_sort'
     show_band = True
@@ -374,8 +379,19 @@ while running:
 
     # Draw Screen
     screen.fill((5, 5, 10))
-    screen.blit(background, (0, 0))
-    screen.blit(panes, (0, 0))
+    build_states = ['build_menu', 'build_state', 'build_results']
+    menu_states = ['main_menu', 'journey_menu', 'fuse_setup', 'fusion', 'fuse_animation',
+                   'band_menu', 'band_sort']
+    journey_states = ['journey', 'journey_complete', 'failure', 'fight']
+    if game_state in menu_states:
+        screen.blit(background, (0, 0))
+        screen.blit(panes, (0, 0))
+    elif game_state in build_states:
+        screen.blit(bkg_build, (0, 0))
+        screen.blit(panes_build, (0, 0))
+    elif game_state in journey_states:
+        screen.blit(background, (0, 0))
+        screen.blit(panes, (0, 0))
 
     gauge = 74 * energy / 100
     rectangle = pygame.Rect(283, 21, gauge, 16)
@@ -391,16 +407,16 @@ while running:
         clr = [Colors['orange'], Colors['silver'], Colors['yellow'], Colors['red']]
         for p in range(4):
             draw_text(f"x{stash[p]}", Fonts['helv22b'], clr[p], 1200, 90 + 40 * p)
-            screen.blit(Icon[s_names[p]], (1130, 70 + 40 * p))
+            screen.blit(Png[s_names[p]], (1130, 70 + 40 * p))
 
     if game_state == 'main_menu':
-        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 68, Icon['journey'], 1).draw() and not buttoncheck:
+        if Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 68, Png['journey'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'journey_menu'
-        if Button(285, SCREEN_SIZE[1] - y_btn, Icon['build'], 1).draw() and not buttoncheck:
+        if Button(285, SCREEN_SIZE[1] - y_btn, Png['build'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'build_menu'
-        if Button(1000, SCREEN_SIZE[1] - y_btn, Icon['band'], 1).draw() and not buttoncheck:
+        if Button(1000, SCREEN_SIZE[1] - y_btn, Png['band'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'band_menu'
             scroll = 0
@@ -420,7 +436,7 @@ while running:
         if RightClick:
             RightClick = False
             game_state = 'main_menu'
-        if Button(center[0], center[1] + 200, Icon['begin'], 1).draw() and not buttoncheck:
+        if Button(center[0], center[1] + 200, Png['begin'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'journey'
             journey_state = True 
@@ -467,27 +483,27 @@ while running:
             fakeout = True
         x1 = 360
         y1 = 250
-        if Button(x1, y1, Icon['build-pixite'], 1).draw() and not buttoncheck:
+        if Button(x1, y1, Png['build-pixite'], 1).draw() and not buttoncheck:
             buttoncheck = True
             if pixite >= 5:
                 pixite -= 5
                 build_pixite = True
                 game_state = 'build_state'
         y2 = SCREEN_SIZE[1] - 300
-        if Button(x1, y2, Icon['build-voxite'], 1).draw() and not buttoncheck:
+        if Button(x1, y2, Png['build-voxite'], 1).draw() and not buttoncheck:
             buttoncheck = True
             if voxite >= 5:
                 voxite -= 5
                 build_voxite = True
                 game_state = 'build_state'
         x2 = SCREEN_SIZE[0] - 400
-        if Button(x2, y1, Icon['build-doxite'], 1).draw() and not buttoncheck:
+        if Button(x2, y1, Png['build-doxite'], 1).draw() and not buttoncheck:
             buttoncheck = True
             if doxite >= 5:
                 doxite -= 5
                 build_doxite = True
                 game_state = 'build_state'
-        if Button(x2, y2, Icon['build-tyxite'], 1).draw() and not buttoncheck:
+        if Button(x2, y2, Png['build-tyxite'], 1).draw() and not buttoncheck:
             buttoncheck = True
             if tyxite >= 5:
                 tyxite -= 5
@@ -538,7 +554,7 @@ while running:
             results_timer += dt
             if results_timer >= 1:
                 num_display += 1
-        elif Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Icon['continue'], 1).draw() and not buttoncheck:
+        elif Button(SCREEN_SIZE[0]/2, SCREEN_SIZE[1] - 50, Png['continue'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'build_menu'
         for n in range(num_display):
@@ -601,7 +617,7 @@ while running:
                         fuse_counter += 1
                     print(f"Count: {fuse_counter} // {fuse_list}")
             if check_fuse[m]:
-                screen.blit(Icon['check'], (xx - 73, yy - 15))
+                screen.blit(Png['check'], (xx - 73, yy - 15))
             info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI,
                     pick.LV, pick.SEF, pick.rarity]
             cat = ['', 'HP ', 'ATK', 'DEF', 'WIS', 'AGI', 'LV ', 'SEF', '']
@@ -614,7 +630,7 @@ while running:
                     font_a = Fonts['helv10b']
                 x_text = xx - 50
                 draw_text(f"{cat[j]} {info[j]}", font_a, Colors['white'], x_text, y_text + 18 * j)
-        if Button(800, SCREEN_SIZE[1] - 100, Icon['fuse'], 1).draw() and not buttoncheck:
+        if Button(800, SCREEN_SIZE[1] - 100, Png['fuse'], 1).draw() and not buttoncheck:
             buttoncheck = True
             if fuse_type == 'self':
                 fuse_type = 'sacrifice'
@@ -622,7 +638,7 @@ while running:
                 fuse_type = 'self'
             fuse_setup = True
         if fuse_counter > 0:
-            if Button(500, SCREEN_SIZE[1] - 100, Icon['fuse'], 1).draw() and not buttoncheck:
+            if Button(500, SCREEN_SIZE[1] - 100, Png['fuse'], 1).draw() and not buttoncheck:
                 fuse_num = fuse_counter
                 game_state = 'fuse_animation'
                 fuse_timer = 0
@@ -650,7 +666,7 @@ while running:
             fakeout = True
 
     if game_state == 'band_menu':
-        if Button(1000, SCREEN_SIZE[1] - y_btn, Icon['band'], 1).draw() and not buttoncheck:
+        if Button(1000, SCREEN_SIZE[1] - y_btn, Png['band'], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = 'fuse_setup'
         if RightClick:
@@ -780,7 +796,7 @@ while running:
             gauge = journey_bar * (win_count + 1) / num_fights
             rectangle = pygame.Rect(500, 600, gauge, 25)
             # Draw enemies
-            if Button(center[0], center[1], Icon['fight'], 1).draw() and not buttoncheck:
+            if Button(center[0], center[1], Png['fight'], 1).draw() and not buttoncheck:
                 game_state = 'fight'
                 buttoncheck = True
         pygame.draw.rect(screen, Colors['cyan'], rectangle)
