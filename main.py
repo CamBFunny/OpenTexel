@@ -67,6 +67,7 @@ empty = Fighter('-', 'empty')
 
 band = np.array([[empty,] * 3]*3)
 band_pos = np.array([[[0]*2] * 3]*3)
+my_band_pos = np.array([[[0]*2] * 3]*3)
 hp_band = np.array([[0,] * 3]*3)
 space = 180
 bx = 100
@@ -78,9 +79,9 @@ for x in range(3):
         xx = bx + 30 + space * x
         yy = by + 30 + space * y
         band_pos[x][y] = [xx, yy]
+        my_band_pos[x][y] = [20 + xx*0.7, yy*0.7]
 
-home_pos = band_pos
-front_pos = (home_pos[2][0][0] + 200, home_pos[2][0][1])
+front_pos = (band_pos[2][0][0] + 200, band_pos[2][0][1])
 
 enemies = np.array([empty,] * 3)
 frontline = [0, 0, 0]
@@ -689,7 +690,7 @@ while running:
         for x in range(3):
             for y in range(3):
                 pick = band[x][y]
-                pos = [band_pos[x][y][0]/2, band_pos[x][y][1]/2 - 80]
+                pos = my_band_pos[x][y]
                 hp_tmp = hp_band[x][y]
                 if Button(pos[0], pos[1], Portrait[pick.name], 1).draw() and not buttoncheck:
                     buttoncheck = True
@@ -703,9 +704,10 @@ while running:
                 draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125) 
         if swap_x >= 0:
             swap_ready = True
-            rx = band_pos[swap_x][swap_y][0]
-            ry = band_pos[swap_x][swap_y][1]
-            rectangle = pygame.Rect(rx - 5, ry - 15, space + 5, space + 5)
+            rx = my_band_pos[swap_x][swap_y][0]
+            ry = my_band_pos[swap_x][swap_y][1]
+            sqr_sz = space * 0.7
+            rectangle = pygame.Rect(rx - 60, ry - 30, sqr_sz, sqr_sz)
             pygame.draw.rect(screen, Colors['red'], rectangle, 4)
         # Display barracks
         r_keys = list(reserves.keys())
@@ -733,7 +735,7 @@ while running:
             pick = reserves[tmp]
             logo = Portrait[pick.name]
             xx = 500 + space * 1.1 * (n % columns)
-            yy = 100 * (1 + n // columns)
+            yy = 110 * (1 + n // columns)
             if Button(xx, yy, logo, 1).draw() and not buttoncheck:
                 buttoncheck = True
                 if selection != pick:
@@ -743,19 +745,21 @@ while running:
                     selection = empty
             if selection.keyname == tmp:
                 selection_made = True
-                rectangle = pygame.Rect(xx - 5, yy - 15, space + 5, space + 5)
+                sqr_sz = space * 0.7
+                rectangle = pygame.Rect(xx - 60, yy - 30, sqr_sz, sqr_sz)
                 pygame.draw.rect(screen, Colors['red'], rectangle, 4)
+            # Display info
             info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI,
                     pick.LV, pick.SEF, pick.rarity]
             cat = ['', 'HP ', 'ATK', 'DEF', 'WIS', 'AGI', 'LV ', 'SEF', '']
+            font_lib = [Fonts['helv10b']] * len(info)
+            font_lib[0] = Fonts['helv20b']
+            y_lib = [yy] * len(info)
+            y_lib[0] = yy - 10
+            x_text = xx - 100
             for j in range(len(info)):
-                if j == 0:
-                    y_text = yy - 10
-                    font_a = Fonts['helv20b']
-                else:
-                    y_text = yy
-                    font_a = Fonts['helv10b']
-                x_text = xx - 50
+                font_a = font_lib[j]
+                y_text = y_lib[j]
                 draw_text(f"{cat[j]} {info[j]}", font_a, Colors['white'], x_text, y_text + 18 * j)
             if swap_ready and selection_made:
                 swap_ready = False
@@ -763,7 +767,6 @@ while running:
                 band[x][y] = selection
                 print(reserves)
                 band_init = True
-                
 
     if game_state == 'journey':
         # Journey progress bar
