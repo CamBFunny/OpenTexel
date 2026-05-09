@@ -84,14 +84,14 @@ for x in range(3):
 front_pos = (band_pos[2][0][0] + 200, band_pos[2][0][1])
 
 enemies = np.array([empty,] * 3)
-frontline = [0, 0, 0]
+frontline = []
 
 barracks = {}
 attack_order = {}
 queue = 0
 attack_counter = 0
 attack_timer = 0
-swipe_order = [0,]
+swipe_order = []
 
 # // FUNCTIONS //
 def draw_text(text, font, text_col, x, y):  # Function for outputting text onto the screen
@@ -131,7 +131,6 @@ def swipe(pressed):
             tmp[n] = band[2 - n][n]
         return tmp
 
-import os
 filelist=os.listdir('lib/images')
 counter = 0
 for fichier in filelist[:]: # filelist[:] makes a copy of filelist.
@@ -248,9 +247,9 @@ def open(box):
 
     return value
 
-# Initialize Variables
+# initialize variables
 fuse_type = 'self'
-# Boolean
+# boolean
 LeftHold = False
 LeftClick = False
 strike = False
@@ -265,6 +264,7 @@ RightClick = False
 MiddleClick = False
 show_band = False
 info_button = False
+attack_setup = False
 
 win_count = 0
 energy = 100
@@ -285,7 +285,8 @@ selection = empty
 name_fuse = ['Fodder', 'Ikuppi', 'Banunu', 'Sirsir']
 pull = fuse_dict = reserves = {}
 check_fuse = fuse_list = prize = odds = []
-og_health = damage = []
+og_health = []
+damage = [0, 0, 0]
 
 y_btn = 65  # build button
 
@@ -338,9 +339,10 @@ while running:
         # Reading Keyboard Input
         if event.type == KEYDOWN:
             keys_pressed.add(event.key)
-            if len(swipe_order) <= 3:
+            if game_state == 'fight' and queue < 3 and not victory:
                 if event.key in swipe_list and event.key not in swipe_order:
-                    frontline = swipe(event.key)
+                    queue += 1
+                    frontline = list(frontline) + [swipe(event.key)]
                     swipe_order = list(swipe_order) + [event.key]
         if event.type == pygame.QUIT or K_ESCAPE in keys_pressed:
             running = False
@@ -442,7 +444,8 @@ while running:
             game_state = 'journey'
             journey_state = True 
             journey_timer = 0
-            swipe_order = [0, ]
+            swipe_order = []
+            frontline = []
             win_count = 0
             num_fights = random.choice(range(1, 4))
 
@@ -721,7 +724,6 @@ while running:
             if K_s in keys_pressed:
                 keys_pressed.remove(K_s)
                 limit = og_size // columns - columns
-                print(limit)
                 if scroll < limit:
                     scroll += 1
             if K_w in keys_pressed and scroll > 0:
@@ -764,8 +766,9 @@ while running:
             if swap_ready and selection_made:
                 swap_ready = False
                 selection_made = False
-                band[x][y] = selection
-                print(reserves)
+                tmp = band[swap_x][swap_y]
+                barracks[tmp.keyname] = tmp
+                band[swap_x][swap_y] = selection
                 band_init = True
 
     if game_state == 'journey':
@@ -801,6 +804,13 @@ while running:
             # Draw enemies
             if Button(center[0], center[1], Png['fight'], 1).draw() and not buttoncheck:
                 game_state = 'fight'
+                attack_counter = 0
+                attack_state = False
+                enemy_attack = False
+                attack_setup = False
+                frontline = []
+                swipe_order = []
+                queue = 0
                 buttoncheck = True
         pygame.draw.rect(screen, Colors['cyan'], rectangle)
 
@@ -837,7 +847,7 @@ while running:
     if game_state == 'band_sort':
         game_state = 'main_menu'
         overkill = 0
-        frontline = [0, 0, 0]
+        frontline = []
         # Sort by strength
         sort_dict = {}
         xyz = list(barracks.keys())
@@ -858,9 +868,11 @@ while running:
         s = pygame.Surface((540, 545), pygame.SRCALPHA)
         s.fill((25, 25, 25, 100))
         screen.blit(s, (bx, by))
+        health_pool = 0
         for x in range(3):
             if enemies[x].HP > 0:
                 enemy_hp = enemies[x].HP
+                health_pool += enemy_hp
                 q = len(f"{enemy_hp}")
                 villain = Portrait[enemies[x].name]
                 villain = pygame.transform.flip(villain, True, False)
@@ -890,12 +902,13 @@ while running:
                     draw_text(f"LV {pick.LV}", Fonts['helv15b'], Colors['orange'], pos[0] + 25, pos[1] + 125)
                     draw_text(f"{pick.ATK} ATK", Fonts['helv15b'], Colors['red'], pos[0] + 90, pos[1] + 125)
 
-        total_health = np.array([0, 0, 0])
-        for n in range(3):
-            total_health[n] = enemies[n].HP
-
-        if np.sum(total_health) == 0 and not victory:
+        if health_pool == 0 and not victory:
             victory = True
+            enemy_attack = False
+            attack_state = False
+            enemy_done = True
+            attack_counter = 0
+            queue = 0
             enemy_power = 0
             victory_time = 0
 
@@ -924,13 +937,19 @@ while running:
                 victory = False
                 victory_time = 0
                 journey_timer = 0
+                attack_state = False
+                enemy_attack = False
+                swipe_order = []
+                frontline = []
                 claimed = False
 
         # Swipe selections
         swipe_colors = [Colors['yellow'], Colors['orange'], Colors['red']]
-        for x in range(len(swipe_order)-1):
+        if len(swipe_order) > 3:
+            swipe_order = swipe_order[:3]
+        for x in range(len(swipe_order)):
             rectangle = pygame.Rect(-50, -50, 10, 10)
-            index = x+1
+            index = x
             if list(swipe_order)[index] == K_1:
                 rx = band_pos[0][0][0]
                 ry = band_pos[0][0][1]
@@ -969,16 +988,15 @@ while running:
                 pygame.draw.polygon(screen, swipe_colors[x], vertices, 4)  # Draw the polygon
             pygame.draw.rect(screen, swipe_colors[x], rectangle, 4)
 
+        if len(swipe_order) == 3 and not attack_state:
+            attack_setup = True
+            attack_state = True
 
-
-        if frontline[0] != 0:
-            attack_order[queue] = frontline
-            frontline = [0, 0, 0]
-            damage = [0, 0, 0]
-            attack_timer = 0
-            queue += 1
-            if queue == 3:
-                attack_state = True
+        if attack_setup:
+            attack_setup = False
+            attack_counter = 0
+            for n in range(3):
+                attack_order[n] = frontline[n]
 
         if attack_state:    # Attack animations
             attack_timer += dt
@@ -1009,7 +1027,7 @@ while running:
                     modifier = 1
                     crit_chance = 100
                     if 1 == random.choice(range(crit_chance)):
-                        dmg_color[j] = Colors['red']
+                        dmg_color[j] = Colors['red'] # Damage is red if crit
                         modifier = 10
                     damage[j] = power * modifier
                     enemies[j].HP -= damage[j]
@@ -1027,7 +1045,13 @@ while running:
                 strike = False
             if attack_counter == 3:
                 enemy_attack = True
+                swipe_order = []
+                frontline = []
+                queue = 0
                 attack_state = False
+
+        if health_pool == 0:
+            enemy_attack = False
 
         if enemy_attack:
             attack_timer += dt
@@ -1043,13 +1067,13 @@ while running:
             elif enemy_done:
                 draw_text(f"-{enemy_power}", Fonts['helv35b'], Colors['orange'], 300, 100)
                 if attack_timer > 2:
-                    queue = 0
                     enemy_attack = False
                     enemy_done = False
                     attack_counter = 0
-                    attack_timer = 0
                     attack_order = {}
-                    swipe_order = [0,]
+                    swipe_order = []
+                    frontline = []
+                    queue = 0
                     strike_hold = False
                     strike = False
 
