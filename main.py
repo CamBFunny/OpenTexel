@@ -85,26 +85,10 @@ async def main():
 
     empty = Fighter("-", "empty")
 
-    band = np.array(
-        [
-            [
-                empty,
-            ]
-            * 3
-        ]
-        * 3
-    )
+    band = np.array([[empty,] * 3] * 3)
     band_pos = np.array([[[0] * 2] * 3] * 3)
     my_band_pos = np.array([[[0] * 2] * 3] * 3)
-    hp_band = np.array(
-        [
-            [
-                0,
-            ]
-            * 3
-        ]
-        * 3
-    )
+    hp_band = np.array([[0,] * 3] * 3)
     space = 180
     bx = 100
     by = 220
@@ -139,17 +123,16 @@ async def main():
         img = font.render(text, True, text_col)
         screen.blit(img, (x, y))
 
-    def display_band(y_pos):
+    def display_band(x_pos, y_pos):
         for x in range(3):
             for y in range(3):
                 if len(xyz) >= x * 3 + y + 1:
                     pick = band[x][y]
-                    pos = [band_pos[x][y][0] + 260, band_pos[x][y][1] - 160 - y_pos ]
-                    hp_tmp = hp_band[x][y]
+                    pos = [band_pos[x][y][0] + 260 + x_pos, band_pos[x][y][1] - 160 - y_pos ]
                     screen.blit(Portrait[pick.name], pos)
-                    draw_text(f"LV {pick.LV} {pick.name}", Fonts["helv18b"], Colors["black"], pos[0] + 25, pos[1] + 130)
-                    if info_button:
-                        draw_text(f"ATK {pick.ATK}", Fonts["helv15b"], Colors["red"], pos[0] + 25, pos[1] + 95)
+                    # draw_text(f"LV {pick.LV} {pick.name}", Fonts["helv18b"], Colors["black"], pos[0] + 25, pos[1] + 130)
+                    # if info_button:
+                    #     draw_text(f"ATK {pick.ATK}", Fonts["helv15b"], Colors["red"], pos[0] + 25, pos[1] + 95)
 
     Portrait = {}
 
@@ -496,7 +479,8 @@ async def main():
                 scroll = 0
                 band_init = True
             if show_band:
-                display_band(0)
+                display_band(0, 0)
+                hp_tmp = hp_band[x][y]
 
         if game_state == "journey_menu":
             if RightClick:
@@ -508,7 +492,6 @@ async def main():
                 game_state = "journey"
                 pygame.mixer.music.load("lib/bgm/Defender of Texel OST - Battle (bgm_005).ogg")  # Background music
                 pygame.mixer.music.play(-1, 0.0)  # Infinite song loop
-                journey_state = True
                 journey_timer = 0
                 swipe_order = []
                 frontline = []
@@ -864,17 +847,18 @@ async def main():
                     band_init = True
 
         if game_state == "journey":
-            y_max = 30
+            y_max = 23
+            rate = 55
             if y_walk < y_max and not y_neg:
-                y_walk += dt*40
-            elif y_walk >= y_max:
-                y_neg = True
-            elif y_neg:
-                y_walk -= dt*10
+                y_walk += dt*rate
             elif y_walk < 0:
                 y_neg = False
-
-            display_band(y_walk)
+            elif y_walk >= y_max:
+                y_neg = True
+                y_walk = y_max - 1
+            elif y_neg:
+                y_walk -= dt * (rate * 0.6)
+            display_band(0, y_walk)
             # Journey progress bar
             journey_bar = 220
             rectangle = pygame.Rect(500, 600, journey_bar, 25)
@@ -981,6 +965,7 @@ async def main():
             s.fill((25, 25, 25, 100))
             screen.blit(s, (bx, by))
             health_pool = 0
+            display_band(-260, -160)
             for x in range(3):
                 if enemies[x].HP > 0:
                     enemy_hp = enemies[x].HP
@@ -1006,9 +991,8 @@ async def main():
                         gauge = 100 * hp_tmp / pick.HP
                         rectangle = pygame.Rect(pos[0], pos[1], gauge, 15)
                         pygame.draw.rect(screen, Colors["red"], rectangle)
-                        # Draw band with info
+                        # Draw band info
                         draw_text(f"{hp_tmp} HP", Fonts["helv10"], Colors["white"], pos[0] + 3, pos[1] + 3)
-                        screen.blit(Portrait[pick.name], pos)
                         draw_text(f"LV {pick.LV}", Fonts["helv15b"], Colors["orange"], pos[0] + 25, pos[1] + 125)
                         draw_text(f"{pick.ATK} ATK", Fonts["helv15b"], Colors["red"], pos[0] + 90, pos[1] + 125)
 
@@ -1022,36 +1006,39 @@ async def main():
                 enemy_power = 0
                 victory_time = 0
 
-            if np.sum(hp_band) <= 0:
+            total_health = np.sum(hp_band)
+            if total_health <= 0:
                 death_time += dt
-                if death_time > 3:
-                    game_state = "failure"
-                    enemy_power = 0
-                    fail_time = 0
-                    death_time = 0
-                    encounter = False
-                    journey_timer = 0
+
+            if death_time > 3:
+                game_state = "failure"
+                enemy_power = 0
+                fail_time = 0
+                death_time = 0
+                encounter = False
+                journey_timer = 0
 
             if victory:
                 victory_time += dt
-                if victory_time >= 3:
-                    for x in range(3):
-                        for y in range(3):
-                            mod = 1
-                            if band[x][y].XP > 0:  # If member is dead, half experience
-                                mod = 0.5
-                            band[x][y].XP += enemy_xp * mod
-                    win_count += 1
-                    encounter = False
-                    game_state = "journey"
-                    victory = False
-                    victory_time = 0
-                    journey_timer = 0
-                    attack_state = False
-                    enemy_attack = False
-                    swipe_order = []
-                    frontline = []
-                    claimed = False
+
+            if victory_time >= 3:
+                for x in range(3):
+                    for y in range(3):
+                        mod = 1
+                        if band[x][y].XP > 0:  # If member is dead, half experience
+                            mod = 0.5
+                        band[x][y].XP += enemy_xp * mod
+                win_count += 1
+                encounter = False
+                game_state = "journey"
+                victory = False
+                victory_time = 0
+                journey_timer = 0
+                attack_state = False
+                enemy_attack = False
+                swipe_order = []
+                frontline = []
+                claimed = False
 
             # Swipe selections
             swipe_colors = [Colors["yellow"], Colors["orange"], Colors["red"]]
