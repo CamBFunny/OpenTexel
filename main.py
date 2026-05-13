@@ -2,45 +2,12 @@ import pygame, data, time, numpy as np, os
 import random, pandas as pd, inspect, asyncio, math
 
 # Import buttons
-from pygame.locals import (
-    KEYDOWN,
-    QUIT,
-    KEYUP,
-    K_LCTRL,
-    K_UP,
-    K_DOWN,
-    K_LEFT,
-    K_RIGHT,
-    K_ESCAPE,
-    K_TAB,
-    K_LSHIFT,
-    K_SPACE,
-    K_1,
-    K_2,
-    K_3,
-    K_4,
-    K_5,
-    K_6,
-    K_7,
-    K_8,
-    K_9,
-    K_0,
-    K_q,
-    K_w,
-    K_e,
-    K_r,
-    K_t,
-    K_a,
-    K_s,
-    K_d,
-    K_f,
-    K_g,
-    K_z,
-    K_x,
-    K_c,
-    K_v,
-    K_b,
-)
+from pygame.locals import (KEYDOWN, QUIT, KEYUP, K_LCTRL,
+    K_UP, K_DOWN, K_LEFT, K_RIGHT, K_ESCAPE, K_TAB, K_LSHIFT, K_SPACE,
+    K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9, K_0,
+                           K_q, K_w, K_e, K_r, K_t,
+                           K_a, K_s, K_d, K_f, K_g,
+                           K_z, K_x, K_c, K_v, K_b)
 
 pygame.init()  # Initialize PyGame
 # Screen settings
@@ -171,6 +138,18 @@ async def main():
     def draw_text(text, font, text_col, x, y):  # Function for outputting text onto the screen
         img = font.render(text, True, text_col)
         screen.blit(img, (x, y))
+
+    def display_band(y_pos):
+        for x in range(3):
+            for y in range(3):
+                if len(xyz) >= x * 3 + y + 1:
+                    pick = band[x][y]
+                    pos = [band_pos[x][y][0] + 260, band_pos[x][y][1] - 160 - y_pos ]
+                    hp_tmp = hp_band[x][y]
+                    screen.blit(Portrait[pick.name], pos)
+                    draw_text(f"LV {pick.LV} {pick.name}", Fonts["helv18b"], Colors["black"], pos[0] + 25, pos[1] + 130)
+                    if info_button:
+                        draw_text(f"ATK {pick.ATK}", Fonts["helv15b"], Colors["red"], pos[0] + 25, pos[1] + 95)
 
     Portrait = {}
 
@@ -348,6 +327,7 @@ async def main():
     info_button = False
     attack_setup = False
     band_sort = False
+    y_neg = False
 
     # numeric variables
     win_count = 0
@@ -356,6 +336,7 @@ async def main():
     next_class = 100
     HoldStart = 0
     death_time = 0
+    y_walk = 0
 
     num_display = num_total = results_timer = 0
     fuse_counter = fuse_num = fuse_timer = 0
@@ -394,7 +375,7 @@ async def main():
     build_tyxite = False
 
     # debug
-    debug = False
+    debug = True
     if debug:
         band_sort = True
         show_band = True
@@ -484,7 +465,6 @@ async def main():
             screen.blit(panes_build, (0, 0))
         elif game_state in journey_states:
             screen.blit(fight_background, (0, -200))
-            screen.blit(panes, (0, 0))
 
         gauge = 74 * energy / 100
         rectangle = pygame.Rect(283, 21, gauge, 16)
@@ -516,16 +496,7 @@ async def main():
                 scroll = 0
                 band_init = True
             if show_band:
-                for x in range(3):
-                    for y in range(3):
-                        if len(xyz) >= x * 3 + y + 1:
-                            pick = band[x][y]
-                            pos = [band_pos[x][y][0] + 260, band_pos[x][y][1] - 160]
-                            hp_tmp = hp_band[x][y]
-                            screen.blit(Portrait[pick.name], pos)
-                            draw_text(f"LV {pick.LV} {pick.name}", Fonts["helv18b"], Colors["black"], pos[0] + 25, pos[1] + 130)
-                            if info_button:
-                                draw_text(f"ATK {pick.ATK}", Fonts["helv15b"], Colors["red"], pos[0] + 25, pos[1] + 95)
+                display_band(0)
 
         if game_state == "journey_menu":
             if RightClick:
@@ -893,6 +864,17 @@ async def main():
                     band_init = True
 
         if game_state == "journey":
+            y_max = 30
+            if y_walk < y_max and not y_neg:
+                y_walk += dt*40
+            elif y_walk >= y_max:
+                y_neg = True
+            elif y_neg:
+                y_walk -= dt*10
+            elif y_walk < 0:
+                y_neg = False
+
+            display_band(y_walk)
             # Journey progress bar
             journey_bar = 220
             rectangle = pygame.Rect(500, 600, journey_bar, 25)

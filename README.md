@@ -9,3 +9,4 @@ I will be using the [official Wiki](https://defenderoftexel.fandom.com/wiki/Defe
 * Animations for fusions
 * Polish band menu
 * Animate band walking during journey
+* remove banner during fight
