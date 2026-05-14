@@ -855,8 +855,8 @@ async def main():
             journey_bar = 220
             gauge(journey_bar, 500, 600, 25, Colors["grey"])
             progress = win_count * 3 + journey_timer
-            gauge = journey_bar * progress / (3 * num_fights)
-            rectangle = pygame.Rect(500, 600, gauge, 25)
+            sauce = journey_bar * progress / (3 * num_fights)
+            gauge(sauce, 500, 600, 25, Colors["cyan"])
             if win_count == num_fights:
                 game_state = "journey_complete"
             elif not encounter:
@@ -877,8 +877,8 @@ async def main():
                         enemy_xp += enemies[x].XP
                         enemy_power += enemies[x].ATK
             elif encounter and game_state != "fight":
-                gauge = journey_bar * (win_count + 1) / num_fights
-                rectangle = pygame.Rect(500, 600, gauge, 25)
+                fgauge = journey_bar * (win_count + 1) / num_fights
+                rectangle = pygame.Rect(500, 600, fgauge, 25)
                 # Draw enemies
                 if Button(center[0], center[1], Png["fight"], 1).draw() and not buttoncheck:
                     game_state = "fight"
@@ -890,7 +890,6 @@ async def main():
                     swipe_order = []
                     queue = 0
                     buttoncheck = True
-            pygame.draw.rect(screen, Colors["cyan"], rectangle)
 
         if game_state == "journey_complete":
             fade = 0.4
@@ -965,8 +964,8 @@ async def main():
                     villain = Portrait[enemies[x].name]
                     villain = pygame.transform.flip(villain, True, False)
                     enemy_portrait = colorize(villain, Colors["red"])
-                    gauge = 100 * enemy_hp / og_health[x]
-                    rectangle = pygame.Rect(enemies_pos[0][0], 220 + space * x, gauge, 15)
+                    fgauge = 100 * enemy_hp / og_health[x]
+                    rectangle = pygame.Rect(enemies_pos[0][0], 220 + space * x, fgauge, 15)
                     pygame.draw.rect(screen, Colors["red"], rectangle)
                     draw_text(f"{enemy_hp} HP", Fonts["helv10"], Colors["white"], enemies_pos[0][0] + 3, 223 + space * x)
                     screen.blit(villain, enemies_pos[x])
@@ -979,8 +978,8 @@ async def main():
                         band[x][y] = empty
                     else:
                         q = len(f"{hp_tmp}")
-                        gauge = 100 * hp_tmp / pick.HP
-                        rectangle = pygame.Rect(pos[0], pos[1], gauge, 15)
+                        fgauge = 100 * hp_tmp / pick.HP
+                        rectangle = pygame.Rect(pos[0], pos[1], fgauge, 15)
                         pygame.draw.rect(screen, Colors["red"], rectangle)
                         # Draw band info
                         draw_text(f"{hp_tmp} HP", Fonts["helv10"], Colors["white"], pos[0] + 3, pos[1] + 3)
