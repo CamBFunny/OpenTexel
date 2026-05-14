@@ -340,6 +340,9 @@ async def main():
     og_health = []
     damage = [0, 0, 0]
 
+    # miscellaneous
+    fuse_toggle = Png["fodder"]
+
     y_btn = 65  # build button
     game_state = "main_menu"
     dB = 1.0
@@ -529,34 +532,31 @@ async def main():
                 RightClick = False
                 RightHold = True
                 game_state = "main_menu"
-            x1 = 360
-            y1 = 250
-            if Button(x1, y1, Png["build-pixite"], 1).draw() and not buttoncheck:
-                buttoncheck = True
-                if pixite >= 5:
-                    pixite -= 5
-                    build_pixite = True
-                    game_state = "build_state"
-            y2 = SCREEN_SIZE[1] - 300
-            if Button(x1, y2, Png["build-voxite"], 1).draw() and not buttoncheck:
-                buttoncheck = True
-                if voxite >= 5:
-                    voxite -= 5
-                    build_voxite = True
-                    game_state = "build_state"
-            x2 = SCREEN_SIZE[0] - 400
-            if Button(x2, y1, Png["build-doxite"], 1).draw() and not buttoncheck:
-                buttoncheck = True
-                if doxite >= 5:
-                    doxite -= 5
-                    build_doxite = True
-                    game_state = "build_state"
-            if Button(x2, y2, Png["build-tyxite"], 1).draw() and not buttoncheck:
-                buttoncheck = True
-                if tyxite >= 5:
-                    tyxite -= 5
-                    build_tyxite = True
-                    game_state = "build_state"
+            x_build = [360, SCREEN_SIZE[0] - 400]
+            y_build = [230, SCREEN_SIZE[1] - 280]
+            stash_names = ["pixite", "voxite", "doxite", "tyxite"]
+            img_build = [Png["build-pixite"], Png["build-voxite"], Png["build-doxite"], Png["build-tyxite"]]
+            build_sel = 0
+            for n in range(4):
+                if Button(x_build[n//2], y_build[n%2], img_build[n], 1).draw() and not buttoncheck:
+                    buttoncheck = True
+                    build_sel = stash_names[n]
+            if build_sel == "pixite" and pixite >= 5:
+                pixite -= 5
+                build_pixite = True
+                game_state = "build_state"
+            elif build_sel == "voxite" and voxite >= 5:
+                voxite -= 5
+                build_voxite = True
+                game_state = "build_state"
+            elif build_sel == "doxite" and doxite >= 5:
+                doxite -= 5
+                build_doxite = True
+                game_state = "build_state"
+            elif build_sel == "tyxite" and tyxite >= 5:
+                tyxite -= 5
+                build_tyxite = True
+                game_state = "build_state"
 
         if game_state == "build_state":
             pull = {}
@@ -877,9 +877,6 @@ async def main():
                         enemy_xp += enemies[x].XP
                         enemy_power += enemies[x].ATK
             elif encounter and game_state != "fight":
-                fgauge = journey_bar * (win_count + 1) / num_fights
-                rectangle = pygame.Rect(500, 600, fgauge, 25)
-                # Draw enemies
                 if Button(center[0], center[1], Png["fight"], 1).draw() and not buttoncheck:
                     game_state = "fight"
                     attack_counter = 0
