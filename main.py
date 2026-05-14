@@ -16,7 +16,6 @@ RESOLUTION_MOBILE = [int(540), int(960)]
 screen = pygame.display.set_mode(SCREEN_SIZE)
 center = (SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 2)
 
-
 async def main():
     running = True
     keys_pressed = set()
@@ -134,16 +133,9 @@ async def main():
                     # if info_button:
                     #     draw_text(f"ATK {pick.ATK}", Fonts["helv15b"], Colors["red"], pos[0] + 25, pos[1] + 95)
 
-    Portrait = {}
-
-    def image(name):
-        name = pygame.image.load(f"lib/fighters/{name}_Sprite.webp")
-        sz = name.get_size()
-        scl = 120 / sz[1]
-        name = pygame.transform.scale(name, (sz[0] * scl, sz[1] * scl))
-        return name
-
-    Portrait["-"] = image("empty")
+    def gauge(value, x, y, width, color):
+        rectangle = pygame.Rect(x, y, value, width)
+        pygame.draw.rect(screen, color, rectangle)
 
     swipe_list = (K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8)
 
@@ -184,27 +176,34 @@ async def main():
     for n in filelist:
         Png[n] = pygame.image.load(f"lib/images/{n}.png")
 
-    sz = Png["check"].get_size()
-    scl = 22
-    Png["check"] = pygame.transform.scale(Png["check"], (sz[0] / scl, sz[1] / scl))
+    def resize(self, scale, form):
+        size = self.get_size()
+        if form == 0:
+            result = pygame.transform.scale(self, (size[0] / scale, size[1] / scale))
+        else:
+            if form == 'width':
+                index = 0
+            elif form == 'height':
+                index = 1
+            scl = scale / size[index]
+            result = pygame.transform.scale(self, (size[0] * scl, size[1] * scl))
+        return result
+
+    def image(name):
+        name = resize(pygame.image.load(f"lib/fighters/{name}_Sprite.webp"), 120, 'height')
+        return name
+
+    Portrait = {}
+    Portrait["-"] = image("empty")
+
+    Png["check"] = resize(Png["check"], 22, 'height')
 
     # Images
-    panes = Png["hm-panes"]
-    background = Png["backdrop-1"]
-    sz = background.get_size()
-    scl = SCREEN_SIZE[0] / sz[0]
-    background = pygame.transform.scale(background, (sz[0] * scl, sz[1] * scl))
-    panes = pygame.transform.scale(panes, (sz[0] * scl, sz[1] * scl))
-    panes_build = Png["build-panes"]
-    panes_build = pygame.transform.scale(panes_build, (sz[0] * scl, sz[1] * scl))
-
-    fight_background = Png["background"]
-    sz = fight_background.get_size()
-    scl = SCREEN_SIZE[0] / sz[0]
-    fight_background = pygame.transform.scale(fight_background, (sz[0] * scl, sz[1] * scl))
-
-    bkg_build = Png["bkg-build"]
-    bkg_build = pygame.transform.scale(bkg_build, (sz[0] * scl, sz[1] * scl))
+    panes = resize(Png["hm-panes"], SCREEN_SIZE[0], 'width')
+    panes_build = resize(Png["build-panes"], SCREEN_SIZE[0], 'width')
+    background = resize(Png["backdrop-1"], SCREEN_SIZE[0], 'width')
+    bkg_fight = resize(Png["background"], SCREEN_SIZE[0], 'width')
+    bkg_build = resize(Png["bkg-build"], SCREEN_SIZE[0], 'width')
 
     # ODS Import code
     file_path = "db_texel.ods"
@@ -311,6 +310,9 @@ async def main():
     attack_setup = False
     band_sort = False
     y_neg = False
+    band_init = fuse_complete = fuse_setup = False
+    swap_ready = selection_made = False
+    claimed = False
 
     # numeric variables
     win_count = 0
@@ -320,19 +322,18 @@ async def main():
     HoldStart = 0
     death_time = 0
     y_walk = 0
-
     num_display = num_total = results_timer = 0
     fuse_counter = fuse_num = fuse_timer = 0
     swap_x = swap_y = scroll = x = y = xx = 0
     journey_timer = num_fights = fail_time = 0
     victory_time = enemy_xp = overkill = 0
-    band_init = fuse_complete = fuse_setup = False
-    swap_ready = selection_made = False
-    claimed = False
+
     selection = empty
 
     # lists and tuples
     name_fuse = ["Fodder", "Ikuppi", "Banunu", "Sirsir"]
+    stash_names = ["pixite", "voxite", "doxite", "tyxite"]
+    stash_rgb = [Colors["orange"], Colors["silver"], Colors["yellow"], Colors["red"]]
     pull = fuse_dict = reserves = {}
     check_fuse = fuse_list = prize = odds = []
     xyz = []
@@ -340,7 +341,6 @@ async def main():
     damage = [0, 0, 0]
 
     y_btn = 65  # build button
-
     game_state = "main_menu"
     dB = 1.0
 
@@ -447,23 +447,18 @@ async def main():
             screen.blit(bkg_build, (0, 0))
             screen.blit(panes_build, (0, 0))
         elif game_state in journey_states:
-            screen.blit(fight_background, (0, -200))
+            screen.blit(bkg_fight, (0, -200))
 
-        gauge = 74 * energy / 100
-        rectangle = pygame.Rect(283, 21, gauge, 16)
-        pygame.draw.rect(screen, (20, 210, 20), rectangle)
+        sauce = 74 * energy / 100
+        gauge(sauce, 283, 21, 16, (20, 210, 20))
+        sauce = 74 * experience / next_class
+        gauge(sauce, 128, 21, 16, (20, 20, 210))
 
-        gauge = 74 * experience / next_class
-        rectangle = pygame.Rect(128, 21, gauge, 16)
-        pygame.draw.rect(screen, (20, 20, 210), rectangle)
-
-        if game_state == "main_menu" or "build_menu":
+        if game_state == "main_menu" or "build_menu": # Draw stash
             stash = [pixite, voxite, doxite, tyxite]
-            s_names = ["pixite", "voxite", "doxite", "tyxite"]
-            clr = [Colors["orange"], Colors["silver"], Colors["yellow"], Colors["red"]]
             for p in range(4):
-                draw_text(f"x{stash[p]}", Fonts["helv22b"], clr[p], 1225, 90 + 40 * p)
-                screen.blit(Png[s_names[p]], (1160, 70 + 40 * p))
+                draw_text(f"x{stash[p]}", Fonts["helv22b"], stash_rgb[p], 1225, 90 + 40 * p)
+                screen.blit(Png[stash_names[p]], (1160, 70 + 40 * p))
 
         if game_state == "main_menu":
             if band[2][2].name != "-":
@@ -732,10 +727,7 @@ async def main():
             elif fuse_timer >= 1.2:
                 draw_text(f"{selection.name}: {selection.XP}XP", Fonts["helv35b"], Colors["black"], 600, 280)
                 draw_text(f"+{xp}", Fonts["helv25b"], Colors["black"], 800, 350)
-                fuse_disp = Portrait[selection.name]
-                sz = fuse_disp.get_size()
-                scl = 250 / sz[1]
-                fuse_disp = pygame.transform.scale(fuse_disp, (sz[0] * scl, sz[1] * scl))
+                fuse_disp = resize(Portrait[selection.name], 250, 'height')
                 screen.blit(fuse_disp, [500, 300])
             if fuse_timer >= 3:
                 band_sort = True
@@ -847,8 +839,8 @@ async def main():
                     band_init = True
 
         if game_state == "journey":
-            y_max = 23
-            rate = 55
+            y_max = 20
+            rate = 50
             if y_walk < y_max and not y_neg:
                 y_walk += dt*rate
             elif y_walk < 0:
@@ -857,12 +849,11 @@ async def main():
                 y_neg = True
                 y_walk = y_max - 1
             elif y_neg:
-                y_walk -= dt * (rate * 0.6)
+                y_walk -= dt * (rate * 0.5)
             display_band(0, y_walk)
             # Journey progress bar
             journey_bar = 220
-            rectangle = pygame.Rect(500, 600, journey_bar, 25)
-            pygame.draw.rect(screen, Colors["grey"], rectangle)
+            gauge(journey_bar, 500, 600, 25, Colors["grey"])
             progress = win_count * 3 + journey_timer
             gauge = journey_bar * progress / (3 * num_fights)
             rectangle = pygame.Rect(500, 600, gauge, 25)
