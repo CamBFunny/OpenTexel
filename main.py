@@ -1,4 +1,4 @@
-import pygame, data, time, numpy as np, os
+import pygame, data, time, numpy as np, os, sys
 import random, pandas as pd, inspect, asyncio, math
 
 # Import buttons
@@ -16,359 +16,428 @@ RESOLUTION_MOBILE = [int(540), int(960)]
 screen = pygame.display.set_mode(SCREEN_SIZE)
 center = (SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 2)
 
-async def main():
-    running = True
-    keys_pressed = set()
-    clock = pygame.time.Clock()
-    framerate = 60
-    dt = 0  # Makes time-based calculations relative to framerate
-    # pygame.mouse.set_visible(False)     # Hide mouse cursor
+from setup import *
 
-    pause = False
-    true_counter = 0
-    realtime = 0
-    frame_counter = 0
-    mouse_pos = pygame.mouse.get_pos()
+running = True
+keys_pressed = set()
+clock = pygame.time.Clock()
 
-    Fonts = {}
-    fsizes = range(10, 70, 1)
+# pygame.mouse.set_visible(False)     # Hide mouse cursor
+mouse_pos = pygame.mouse.get_pos()
 
-    # bgm
-    pygame.mixer.music.load("lib/bgm/Defender of Texel OST - Menu (bgm_001).ogg")  # Background music
-    pygame.mixer.music.set_volume(1.0)
+# bgm
+pygame.mixer.music.load("lib/bgm/Defender of Texel OST - Menu (bgm_001).ogg")  # Background music
+pygame.mixer.music.set_volume(1.0)
 
-    # Fonts
-    for i in fsizes:
-        Fonts[f"mono{i}b"] = pygame.font.SysFont("Mono", i, bold=True)
-        Fonts[f"mono{i}"] = pygame.font.SysFont("Mono", i, bold=False)
-        Fonts[f"helv{i}b"] = pygame.font.SysFont("Helvetica", i, bold=True)
-        Fonts[f"helv{i}"] = pygame.font.SysFont("Helvetica", i, bold=False)
+Fonts = {}
+fsizes = range(10, 70, 1)
+# Fonts
+for i in fsizes:
+    Fonts[f"mono{i}b"] = pygame.font.SysFont("Mono", i, bold=True)
+    Fonts[f"mono{i}"] = pygame.font.SysFont("Mono", i, bold=False)
+    Fonts[f"helv{i}b"] = pygame.font.SysFont("Helvetica", i, bold=True)
+    Fonts[f"helv{i}"] = pygame.font.SysFont("Helvetica", i, bold=False)
 
-    # Load colors
-    Colors = {
-        "red": (255, 0, 0),
-        "green": (0, 255, 0),
-        "blue": (0, 0, 255),
-        "white": (255, 255, 255),
-        "yellow": (255, 255, 0),
-        "orange": (255, 150, 0),
-        "pink": (255, 0, 150),
-        "purple": (150, 0, 255),
-        "cyan": (0, 255, 255),
-        "teal": (0, 150, 255),
-        "lime": (150, 255, 0),
-        "seafoam": (0, 255, 150),
-        "magenta": (255, 0, 255),
-        "gold": (255, 215, 0),
-        "black": (0, 0, 0),
-        "silver": (240, 240, 240),
-        "grey": (150, 150, 150),
-    }
+band = np.array([[empty,] * 3] * 3)
+band_pos = np.array([[[0] * 2] * 3] * 3)
+my_band_pos = np.array([[[0] * 2] * 3] * 3)
+hp_band = np.array([[0,] * 3] * 3)
+space = 180
+bx = 100
+by = 220
+enemies_pos = np.array([[0] * 2] * 3)
+for x in range(3):
+    enemies_pos[x] = [SCREEN_SIZE[0] - 300, by + 30 + space * x]
+    for y in range(3):
+        xx = bx + 30 + space * x
+        yy = by + 30 + space * y
+        band_pos[x][y] = [xx, yy]
+        my_band_pos[x][y] = [20 + xx * 0.7, yy * 0.7]
 
-    class Fighter:
-        def __init__(self, name, keyname):
-            self.name = name
-            self.keyname = keyname
-            self.HP = 0
-            self.ATK = 0
-            self.DEF = 0
-            self.WIS = 0
-            self.AGI = 0
-            self.LV = 1
-            self.SEF = 0
-            self.XP = 0
-            self.rarity = "Common"
-            self.tribe = "null"
-            self.sign = "null"
-            self.type = "null"
+front_pos = (band_pos[2][0][0] + 200, band_pos[2][0][1])
 
-    empty = Fighter("-", "empty")
+enemies = np.array(
+    [
+        empty,
+    ]
+    * 3
+)
 
-    band = np.array([[empty,] * 3] * 3)
-    band_pos = np.array([[[0] * 2] * 3] * 3)
-    my_band_pos = np.array([[[0] * 2] * 3] * 3)
-    hp_band = np.array([[0,] * 3] * 3)
-    space = 180
-    bx = 100
-    by = 220
-    enemies_pos = np.array([[0] * 2] * 3)
+# // FUNCTIONS //
+def draw_text(text, font, text_col, x, y):  # Function for outputting text onto the screen
+    img = font.render(text, True, text_col)
+    screen.blit(img, (x, y))
+
+def display_band(x_pos, y_pos):
     for x in range(3):
-        enemies_pos[x] = [SCREEN_SIZE[0] - 300, by + 30 + space * x]
         for y in range(3):
-            xx = bx + 30 + space * x
-            yy = by + 30 + space * y
-            band_pos[x][y] = [xx, yy]
-            my_band_pos[x][y] = [20 + xx * 0.7, yy * 0.7]
+            if len(xyz) >= x * 3 + y + 1:
+                pick = band[x][y]
+                pos = [band_pos[x][y][0] + 260 + x_pos, band_pos[x][y][1] - 160 - y_pos ]
+                screen.blit(Portrait[pick.name], pos)
+                # draw_text(f"LV {pick.LV} {pick.name}", Fonts["helv18b"], Colors["black"], pos[0] + 25, pos[1] + 130)
+                # if info_button:
+                #     draw_text(f"ATK {pick.ATK}", Fonts["helv15b"], Colors["red"], pos[0] + 25, pos[1] + 95)
 
-    front_pos = (band_pos[2][0][0] + 200, band_pos[2][0][1])
+def gauge(value, x, y, width, color):
+    rectangle = pygame.Rect(x, y, value, width)
+    pygame.draw.rect(screen, color, rectangle)
 
-    enemies = np.array(
-        [
-            empty,
-        ]
-        * 3
-    )
-    frontline = []
+swipe_list = (K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8)
 
-    barracks = {}
-    attack_order = {}
-    queue = 0
-    attack_counter = 0
-    attack_timer = 0
-    swipe_order = []
+def swipe(pressed):
+    if pressed == K_1:
+        return band[0]
+    if pressed == K_2:
+        return band[1]
+    if pressed == K_3:
+        return band[2]
+    if pressed == K_4:
+        return band[:, 0]
+    if pressed == K_5:
+        return band[:, 1]
+    if pressed == K_6:
+        return band[:, 2]
+    if pressed == K_7:
+        tmp = [0, 0, 0]
+        for n in range(3):
+            tmp[n] = band[n][n]
+        return tmp
+    if pressed == K_8:
+        tmp = [0, 0, 0]
+        for n in range(3):
+            tmp[n] = band[2 - n][n]
+        return tmp
 
-    # // FUNCTIONS //
-    def draw_text(text, font, text_col, x, y):  # Function for outputting text onto the screen
-        img = font.render(text, True, text_col)
-        screen.blit(img, (x, y))
+filelist = os.listdir("lib/images")
+counter = 0
+for fichier in filelist[:]:  # filelist[:] makes a copy of filelist.
+    if not (fichier.endswith(".png")):
+        filelist.remove(fichier)
+    else:
+        filelist[counter] = filelist[counter].replace(".png", "")
+        counter += 1
 
-    def display_band(x_pos, y_pos):
-        for x in range(3):
-            for y in range(3):
-                if len(xyz) >= x * 3 + y + 1:
-                    pick = band[x][y]
-                    pos = [band_pos[x][y][0] + 260 + x_pos, band_pos[x][y][1] - 160 - y_pos ]
-                    screen.blit(Portrait[pick.name], pos)
-                    # draw_text(f"LV {pick.LV} {pick.name}", Fonts["helv18b"], Colors["black"], pos[0] + 25, pos[1] + 130)
-                    # if info_button:
-                    #     draw_text(f"ATK {pick.ATK}", Fonts["helv15b"], Colors["red"], pos[0] + 25, pos[1] + 95)
+Png = {}
+for n in filelist:
+    Png[n] = pygame.image.load(f"lib/images/{n}.png")
 
-    def gauge(value, x, y, width, color):
-        rectangle = pygame.Rect(x, y, value, width)
-        pygame.draw.rect(screen, color, rectangle)
+fuse_toggle = Png["fodder"]
 
-    swipe_list = (K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8)
+def resize(self, scale, form):
+    size = self.get_size()
+    if form == 0:
+        result = pygame.transform.scale(self, (size[0] / scale, size[1] / scale))
+    else:
+        if form == 'width':
+            index = 0
+        elif form == 'height':
+            index = 1
+        scl = scale / size[index]
+        result = pygame.transform.scale(self, (size[0] * scl, size[1] * scl))
+    return result
 
-    def swipe(pressed):
-        if pressed == K_1:
-            return band[0]
-        if pressed == K_2:
-            return band[1]
-        if pressed == K_3:
-            return band[2]
-        if pressed == K_4:
-            return band[:, 0]
-        if pressed == K_5:
-            return band[:, 1]
-        if pressed == K_6:
-            return band[:, 2]
-        if pressed == K_7:
-            tmp = [0, 0, 0]
-            for n in range(3):
-                tmp[n] = band[n][n]
-            return tmp
-        if pressed == K_8:
-            tmp = [0, 0, 0]
-            for n in range(3):
-                tmp[n] = band[2 - n][n]
-            return tmp
+def image(name):
+    name = resize(pygame.image.load(f"lib/fighters/{name}_Sprite.webp"), 120, 'height')
+    return name
 
-    filelist = os.listdir("lib/images")
-    counter = 0
-    for fichier in filelist[:]:  # filelist[:] makes a copy of filelist.
-        if not (fichier.endswith(".png")):
-            filelist.remove(fichier)
-        else:
-            filelist[counter] = filelist[counter].replace(".png", "")
-            counter += 1
+Portrait = {}
+Portrait["-"] = image("empty")
 
-    Png = {}
-    for n in filelist:
-        Png[n] = pygame.image.load(f"lib/images/{n}.png")
+Png["check"] = resize(Png["check"], 22, 'height')
 
-    def resize(self, scale, form):
-        size = self.get_size()
-        if form == 0:
-            result = pygame.transform.scale(self, (size[0] / scale, size[1] / scale))
-        else:
-            if form == 'width':
-                index = 0
-            elif form == 'height':
-                index = 1
-            scl = scale / size[index]
-            result = pygame.transform.scale(self, (size[0] * scl, size[1] * scl))
-        return result
+# Images
+panes = resize(Png["hm-panes"], SCREEN_SIZE[0], 'width')
+panes_build = resize(Png["build-panes"], SCREEN_SIZE[0], 'width')
+background = resize(Png["backdrop-1"], SCREEN_SIZE[0], 'width')
+bkg_fight = resize(Png["background"], SCREEN_SIZE[0], 'width')
+bkg_build = resize(Png["bkg-build"], SCREEN_SIZE[0], 'width')
 
-    def image(name):
-        name = resize(pygame.image.load(f"lib/fighters/{name}_Sprite.webp"), 120, 'height')
-        return name
+# ODS Import code
+file_path = "db_texel.ods"
+db_fighters = pd.read_excel(file_path, engine="odf", sheet_name=1)  # Import sheet 2
+db_rows = db_fighters.index.size
+db_columns = db_fighters.columns.size
+fighter_dict = {}
 
-    Portrait = {}
-    Portrait["-"] = image("empty")
+for n in range(db_columns):
+    if n % 4 != 0:
+        fighter_dict[db_fighters.columns[n]] = db_fighters.iloc[0, n]
 
-    Png["check"] = resize(Png["check"], 22, 'height')
+fighters = list(fighter_dict.keys())
+num_fighters = len(fighters)
+common_pack = ["Fodder"] * 190 + ["Ikkupi"] * 10 + ["Banunu"] * 4 + ["Sirsir"] * 1
+uncommon_pack = []
+rare_pack = []
+epic_pack = []
+legendary_pack = []
+for n in range(num_fighters):
+    name = fighters[n]
+    if fighter_dict[name] == "Uncommon":
+        uncommon_pack = list(uncommon_pack) + [name]
+    elif fighter_dict[name] == "Rare":
+        rare_pack = list(rare_pack) + [name]
+    elif fighter_dict[name] == "Epic":
+        epic_pack = list(epic_pack) + [name]
+    elif fighter_dict[name] == "Legendary":
+        legendary_pack = list(legendary_pack) + [name]
 
-    # Images
-    panes = resize(Png["hm-panes"], SCREEN_SIZE[0], 'width')
-    panes_build = resize(Png["build-panes"], SCREEN_SIZE[0], 'width')
-    background = resize(Png["backdrop-1"], SCREEN_SIZE[0], 'width')
-    bkg_fight = resize(Png["background"], SCREEN_SIZE[0], 'width')
-    bkg_build = resize(Png["bkg-build"], SCREEN_SIZE[0], 'width')
+class Button:  # Function for clickable buttons on screen
+    def __init__(self, x, y, image, scale):
+        width = image.get_width()
+        height = image.get_height()
+        self.image = pygame.transform.scale(image, (int(width * scale), int(height * scale)))
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+        self.clicked = False  # used for singles button clicks
 
-    # ODS Import code
-    file_path = "db_texel.ods"
-    db_fighters = pd.read_excel(file_path, engine="odf", sheet_name=1)  # Import sheet 2
-    db_rows = db_fighters.index.size
-    db_columns = db_fighters.columns.size
-    fighter_dict = {}
+    def draw(self):
+        action = False
+        # Mouse over event
+        mousepos = pygame.mouse.get_pos()
 
-    for n in range(db_columns):
-        if n % 4 != 0:
-            fighter_dict[db_fighters.columns[n]] = db_fighters.iloc[0, n]
-
-    fighters = list(fighter_dict.keys())
-    num_fighters = len(fighters)
-    common_pack = ["Fodder"] * 190 + ["Ikkupi"] * 10 + ["Banunu"] * 4 + ["Sirsir"] * 1
-    uncommon_pack = []
-    rare_pack = []
-    epic_pack = []
-    legendary_pack = []
-    for n in range(num_fighters):
-        name = fighters[n]
-        if fighter_dict[name] == "Uncommon":
-            uncommon_pack = list(uncommon_pack) + [name]
-        elif fighter_dict[name] == "Rare":
-            rare_pack = list(rare_pack) + [name]
-        elif fighter_dict[name] == "Epic":
-            epic_pack = list(epic_pack) + [name]
-        elif fighter_dict[name] == "Legendary":
-            legendary_pack = list(legendary_pack) + [name]
-
-    class Button:  # Function for clickable buttons on screen
-        def __init__(self, x, y, image, scale):
-            width = image.get_width()
-            height = image.get_height()
-            self.image = pygame.transform.scale(image, (int(width * scale), int(height * scale)))
-            self.rect = self.image.get_rect()
-            self.rect.center = (x, y)
-            self.clicked = False  # used for singles button clicks
-
-        def draw(self):
-            action = False
-            # Mouse over event
-            mousepos = pygame.mouse.get_pos()
-
-            if self.rect.collidepoint(mousepos):  # Over button
-                if pygame.mouse.get_pressed()[0] == 1 and not self.clicked:  # Left click
-                    self.clicked = True
-                    action = True
-
-            # Draw button
-            screen.blit(self.image, (self.rect.x, self.rect.y))
-
-            return action
-
-        def hover(self):
-            action = False  # Mouse over event
-            mousepos = pygame.mouse.get_pos()
-
-            if self.rect.collidepoint(mousepos):  # Over button
+        if self.rect.collidepoint(mousepos):  # Over button
+            if pygame.mouse.get_pressed()[0] == 1 and not self.clicked:  # Left click
+                self.clicked = True
                 action = True
 
-            return action
+        # Draw button
+        screen.blit(self.image, (self.rect.x, self.rect.y))
 
-    def colorize(photo, newColor):
-        photo = photo.copy()
-        photo.fill((0, 0, 0, 100), None, pygame.BLEND_RGBA_MULT)
-        photo.fill(newColor[0:3] + (0,), None, pygame.BLEND_RGBA_ADD)
+        return action
 
-        return photo
+    def hover(self):
+        action = False  # Mouse over event
+        mousepos = pygame.mouse.get_pos()
 
-    def open(box):
-        global value
-        if box == "Common":
-            value = random.choice(common_pack)
-        elif box == "Uncommon":
-            value = random.choice(uncommon_pack)
-        elif box == "Rare":
-            value = random.choice(rare_pack)
-        elif box == "Epic":
-            value = random.choice(epic_pack)
-        elif box == "Legendary":
-            value = random.choice(legendary_pack)
+        if self.rect.collidepoint(mousepos):  # Over button
+            action = True
 
-        return value
+        return action
 
-    # initialize variables
-    fuse_type = "self"
-    # boolean
-    LeftHold = False
-    LeftClick = False
-    strike = False
-    strike_hold = False
-    encounter = False
-    victory = False
-    enemy_attack = False
-    enemy_done = False
-    attack_state = False
-    buttoncheck = False
-    RightClick = False
-    RightHold = False
-    MiddleClick = False
-    show_band = False
-    info_button = False
-    attack_setup = False
-    band_sort = False
-    y_neg = False
-    band_init = fuse_complete = fuse_setup = False
-    swap_ready = selection_made = False
-    claimed = False
+def colorize(photo, newColor):
+    photo = photo.copy()
+    photo.fill((0, 0, 0, 100), None, pygame.BLEND_RGBA_MULT)
+    photo.fill(newColor[0:3] + (0,), None, pygame.BLEND_RGBA_ADD)
 
-    # numeric variables
-    win_count = 0
-    energy = 100
-    experience = 0
-    next_class = 100
-    HoldStart = 0
-    death_time = 0
-    y_walk = 0
-    num_display = num_total = results_timer = 0
-    fuse_counter = fuse_num = fuse_timer = 0
-    swap_x = swap_y = scroll = x = y = xx = 0
-    journey_timer = num_fights = fail_time = 0
-    victory_time = enemy_xp = overkill = 0
+    return photo
 
-    selection = empty
+def open(box):
+    global value
+    if box == "Common":
+        value = random.choice(common_pack)
+    elif box == "Uncommon":
+        value = random.choice(uncommon_pack)
+    elif box == "Rare":
+        value = random.choice(rare_pack)
+    elif box == "Epic":
+        value = random.choice(epic_pack)
+    elif box == "Legendary":
+        value = random.choice(legendary_pack)
 
-    # lists and tuples
-    name_fuse = ["Fodder", "Ikuppi", "Banunu", "Sirsir"]
-    stash_names = ["pixite", "voxite", "doxite", "tyxite"]
-    stash_rgb = [Colors["orange"], Colors["silver"], Colors["yellow"], Colors["red"]]
-    pull = fuse_dict = reserves = {}
-    check_fuse = fuse_list = prize = odds = []
-    xyz = []
-    og_health = []
-    damage = [0, 0, 0]
+    return value
 
-    # miscellaneous
-    fuse_toggle = Png["fodder"]
+# debug
+debug = True
+if debug:
+    band_sort = True
+    show_band = True
+    pull = {}
+    z = [["Uncommon", 10, 5]] * 5 + [["Common", 1, 1]] * 9
+    z = z + [["Uncommon", 10, 5]] * 5 + [["Rare", 20, 10]] * 3
+    z = z + [["Uncommon", 10, 5]] * 5 + [["Rare", 20, 10]] * 3 + [["Epic", 30, 15]] * 2
+    for n in range(len(z)):
+        z_n = z[n]
+        pick = open(z_n[0])
+        before = pick
+        while pick in barracks.keys():
+            p = 1
+            pick = f"{pick}-{p}"
+            p += 1
+        barracks[pick] = Fighter(before, pick)
+        barracks[pick].HP = random.choice(range(1, z_n[1] + 1))
+        if z[n] != "Common":
+            barracks[pick].HP += 9
+        barracks[pick].ATK = random.choice(range(1, z_n[1] * 2 + 1))
+        barracks[pick].DEF = random.choice(range(1, z_n[1] + 1))
+        barracks[pick].WIS = random.choice(range(1, z_n[2] + 1))
+        barracks[pick].AGI = random.choice(range(1, z_n[2] + 1))
+        Portrait[before] = image(before)
 
-    y_btn = 65  # build button
-    game_state = "main_menu"
-    dB = 1.0
+pygame.mixer.music.play(-1, 0.0)  # Infinite song loop
 
-    dmg_color = [
-        Colors["orange"],
-    ] * 3
+while running:
+    # CONTROLS
+    mouse_pos = pygame.mouse.get_pos()
+    for event in pygame.event.get():
+        # Reading Keyboard Input
+        if event.type == KEYDOWN:
+            keys_pressed.add(event.key)
+            if game_state == "fight" and queue < 3 and not victory:
+                if event.key in swipe_list and event.key not in swipe_order:
+                    queue += 1
+                    frontline = list(frontline) + [swipe(event.key)]
+                    swipe_order = list(swipe_order) + [event.key]
+        if event.type == pygame.QUIT or K_ESCAPE in keys_pressed:
+            running = False
+        # Reading Mouse Input
+        if event.type == pygame.MOUSEWHEEL:
+            if event.y == 1:
+                wheel_up = True
+            if event.y == -1:
+                wheel_down = True
+        if pygame.mouse.get_pressed()[0] and not LeftHold:  # Left Click
+            LeftClick = True
+            LeftHold = True
+            ClickBubble = True
+            Bubble_xy = mouse_pos
+            HoldStart = true_counter
+            bubble_counter = true_counter
+        if pygame.mouse.get_pressed()[2] and not RightHold:  # Right Click
+            RightClick = True
+            RightHold = True
+            state_list = ["journey_menu", "fuse_setup", "build_menu",
+                          "band_menu", "fusion"]    # Return to main menu
+            if game_state in state_list:
+                game_state = "main_menu"
+        if pygame.mouse.get_pressed()[1] and not MiddleClick:  # Middle Click
+            MiddleClick = True
 
-    pixite = 12
-    voxite = 7
-    doxite = 1
-    tyxite = 0
-    build_pixite = False
-    build_voxite = False
-    build_doxite = False
-    build_tyxite = False
+        if event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:
+                LeftClick = False
+                LeftHold = False
+                HoldTime = (true_counter - HoldStart) / framerate
+                buttoncheck = False
+            if event.button == 2:
+                MiddleClick = False
+            if event.button == 3:
+                RightClick = False
+                RightHold = False
+        if event.type == pygame.KEYUP:
+            if event.key in keys_pressed:
+                keys_pressed.remove(event.key)
 
-    # debug
-    debug = True
-    if debug:
-        band_sort = True
-        show_band = True
+    # Draw Screen
+    screen.fill((5, 5, 10))
+    build_states = ["build_menu", "build_state", "build_results"]
+    menu_states = ["main_menu", "journey_menu", "fuse_setup", "fusion", "fuse_animation", "band_menu"]
+    journey_states = ["journey", "journey_complete", "failure", "fight"]
+    if game_state in menu_states:
+        screen.blit(background, (0, 0))
+        screen.blit(panes, (0, 0))
+    elif game_state in build_states:
+        screen.blit(bkg_build, (0, 0))
+        screen.blit(panes_build, (0, 0))
+    elif game_state in journey_states:
+        screen.blit(bkg_fight, (0, -200))
+
+    sauce = 74 * energy / 100
+    gauge(sauce, 283, 21, 16, (20, 210, 20))
+    sauce = 74 * experience / next_class
+    gauge(sauce, 128, 21, 16, (20, 20, 210))
+
+    if game_state == "main_menu" or "build_menu": # Draw stash
+        stash = [pixite, voxite, doxite, tyxite]
+        for p in range(4):
+            draw_text(f"x{stash[p]}", Fonts["helv22b"], stash_rgb[p], 1225, 90 + 40 * p)
+            screen.blit(Png[stash_names[p]], (1160, 70 + 40 * p))
+
+    if game_state == "main_menu":
+        if band[2][2].name != "-":
+            if Button(SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] - 68, Png["journey"], 1).draw() and not buttoncheck:
+                buttoncheck = True
+                game_state = "journey_menu"
+        if Button(285, SCREEN_SIZE[1] - y_btn, Png["build"], 1).draw() and not buttoncheck:
+            buttoncheck = True
+            game_state = "build_menu"
+        if Button(1000, SCREEN_SIZE[1] - y_btn, Png["band"], 1).draw() and not buttoncheck:
+            buttoncheck = True
+            game_state = "band_menu"
+            scroll = 0
+            band_init = True
+        if show_band:
+            display_band(0, 0)
+            hp_tmp = hp_band[x][y]
+
+    if game_state == "journey_menu":
+        if Button(center[0], center[1] + 200, Png["begin"], 1).draw() and not buttoncheck:
+            buttoncheck = True
+            game_state = "journey"
+            pygame.mixer.music.load("lib/bgm/Defender of Texel OST - Battle (bgm_005).ogg")  # Background music
+            pygame.mixer.music.play(-1, 0.0)  # Infinite song loop
+            journey_timer = 0
+            swipe_order = []
+            frontline = []
+            win_count = 0
+            num_fights = random.choice(range(1, 4))
+
+    if game_state == "fuse_setup":
+        b_keys = list(barracks.keys())
+        barracks_size = len(b_keys)
+        for n in range(barracks_size):
+            tmp = b_keys[n]
+            pick = barracks[tmp]
+            logo = Portrait[pick.name]
+            columns = 7
+            xx = 100 + space * 1.1 * (n % columns)
+            yy = 100 * (1 + n // columns)
+            if Button(xx, yy, logo, 1).draw() and not buttoncheck:
+                buttoncheck = True
+                selection = pick
+                game_state = "fusion"
+                fuse_setup = True
+            info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI, pick.LV, pick.SEF, pick.rarity]
+            cat = ["", "HP ", "ATK", "DEF", "WIS", "AGI", "LV ", "SEF", ""]
+            l_info = len(info)
+            font_a = [Fonts["helv10b"]] * l_info
+            font_a[0] = Fonts["helv20b"]
+            y_text = [yy] * l_info
+            y_text[0] = yy - 10
+            for j in range(l_info):
+                draw_text(f"{cat[j]} {info[j]}", font_a[j], Colors["white"], xx - 50, y_text[j] + 18 * j)
+
+    if game_state == "build_menu":
+        x_build = [360, SCREEN_SIZE[0] - 400]
+        y_build = [230, SCREEN_SIZE[1] - 280]
+        stash_names = ["pixite", "voxite", "doxite", "tyxite"]
+        img_build = [Png["build-pixite"], Png["build-voxite"], Png["build-doxite"], Png["build-tyxite"]]
+        build_sel = 0
+        for n in range(4):
+            if Button(x_build[n//2], y_build[n%2], img_build[n], 1).draw() and not buttoncheck:
+                buttoncheck = True
+                build_sel = stash_names[n]
+                game_state = "build_state"
+
+        if build_sel == "pixite" and pixite >= 5:
+            pixite -= 5
+            build_pixite = True
+        elif build_sel == "voxite" and voxite >= 5:
+            voxite -= 5
+            build_voxite = True
+        elif build_sel == "doxite" and doxite >= 5:
+            doxite -= 5
+            build_doxite = True
+        elif build_sel == "tyxite" and tyxite >= 5:
+            tyxite -= 5
+            build_tyxite = True
+
+    if game_state == "build_state":
         pull = {}
-        z = [["Uncommon", 10, 5]] * 5 + [["Common", 1, 1]] * 9
-        z = z + [["Uncommon", 10, 5]] * 5 + [["Rare", 20, 10]] * 3
-        z = z + [["Uncommon", 10, 5]] * 5 + [["Rare", 20, 10]] * 3 + [["Epic", 30, 15]] * 2
+        if build_pixite:
+            z = [["Uncommon", 10, 5]] * 5 + [["Common", 1, 1]] * 3
+            build_pixite = False
+        elif build_voxite:
+            z = [["Uncommon", 10, 5]] * 5 + [["Rare", 20, 10]] * 3
+            build_voxite = False
+        elif build_doxite:
+            z = [["Uncommon", 10, 5]] * 5 + [["Rare", 20, 10]] * 3 + [["Epic", 30, 15]] * 2
+            build_doxite = False
+        elif build_tyxite:
+            z = [["Rare", 20, 10]] * 3 + [["Epic", 30, 15]] * 2 + [["Legendary", 50, 25]]
+            build_tyxite = False
+        else:
+            z = []
         for n in range(len(z)):
             z_n = z[n]
             pick = open(z_n[0])
@@ -381,823 +450,607 @@ async def main():
             barracks[pick].HP = random.choice(range(1, z_n[1] + 1))
             if z[n] != "Common":
                 barracks[pick].HP += 9
-            barracks[pick].ATK = random.choice(range(1, z_n[1] * 2 + 1))
+            barracks[pick].ATK = random.choice(range(1, z_n[1] + 1))
             barracks[pick].DEF = random.choice(range(1, z_n[1] + 1))
             barracks[pick].WIS = random.choice(range(1, z_n[2] + 1))
             barracks[pick].AGI = random.choice(range(1, z_n[2] + 1))
             Portrait[before] = image(before)
+            pull[n] = barracks[pick]
+        game_state = "build_results"
+        band_sort = True
+        results_timer = 0
+        num_display = 0
+        num_total = len(pull.keys())
 
-    pygame.mixer.music.play(-1, 0.0)  # Infinite song loop
+    if game_state == "build_results":
+        if num_display < num_total:
+            results_timer += dt
+            if results_timer >= 1:
+                num_display += 1
+        elif Button(SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] - 50, Png["continue"], 1).draw() and not buttoncheck:
+            buttoncheck = True
+            game_state = "build_menu"
+        for n in range(num_display):
+            pull_n = pull[n]
+            logo_result = Portrait[pull_n.name]
+            xx = 110 + space * 1.5 * (n % 4)
+            yy = 110 + 230 * (n // 4)
+            screen.blit(logo_result, (xx, yy))
+            info = [
+                pull_n.name,
+                pull_n.HP,
+                pull_n.ATK,
+                pull_n.DEF,
+                pull_n.WIS,
+                pull_n.AGI,
+                pull_n.LV,
+                pull_n.SEF,
+                pull_n.rarity,
+            ]
+            cat = ["", "HP ", "ATK", "DEF", "WIS", "AGI", "LV ", "SEF", ""]
+            for j in range(len(info)):
+                if j == 0:
+                    y_text = yy - 10
+                    font_a = Fonts["helv25b"]
+                else:
+                    y_text = yy
+                    font_a = Fonts["helv15b"]
+                x_text = xx - 50
+                draw_text(f"{cat[j]} {info[j]}", font_a, Colors["white"], x_text, y_text + 18 * j)
 
-    while running:
-        # CONTROLS
-        mouse_pos = pygame.mouse.get_pos()
-        for event in pygame.event.get():
-            # Reading Keyboard Input
-            if event.type == KEYDOWN:
-                keys_pressed.add(event.key)
-                if game_state == "fight" and queue < 3 and not victory:
-                    if event.key in swipe_list and event.key not in swipe_order:
-                        queue += 1
-                        frontline = list(frontline) + [swipe(event.key)]
-                        swipe_order = list(swipe_order) + [event.key]
-            if event.type == pygame.QUIT or K_ESCAPE in keys_pressed:
-                running = False
-            # Reading Mouse Input
-            if event.type == pygame.MOUSEWHEEL:
-                if event.y == 1:
-                    wheel_up = True
-                if event.y == -1:
-                    wheel_down = True
-            if pygame.mouse.get_pressed()[0] and not LeftHold:  # Left Click
-                LeftClick = True
-                LeftHold = True
-                ClickBubble = True
-                Bubble_xy = mouse_pos
-                HoldStart = true_counter
-                bubble_counter = true_counter
-            if pygame.mouse.get_pressed()[2] and not RightHold:  # Right Click
-                RightClick = True
-            if pygame.mouse.get_pressed()[1] and not MiddleClick:  # Middle Click
-                MiddleClick = True
-
-            if event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1:
-                    LeftClick = False
-                    LeftHold = False
-                    HoldTime = (true_counter - HoldStart) / framerate
-                    buttoncheck = False
-                    clock_hold = False
-                    zero_hold = False
-                if event.button == 2:
-                    MiddleClick = False
-                if event.button == 3:
-                    RightClick = False
-                    RightHold = False
-            if event.type == pygame.KEYUP:
-                if event.key in keys_pressed:
-                    keys_pressed.remove(event.key)
-
-        # Draw Screen
-        screen.fill((5, 5, 10))
-        build_states = ["build_menu", "build_state", "build_results"]
-        menu_states = ["main_menu", "journey_menu", "fuse_setup", "fusion", "fuse_animation", "band_menu"]
-        journey_states = ["journey", "journey_complete", "failure", "fight"]
-        if game_state in menu_states:
-            screen.blit(background, (0, 0))
-            screen.blit(panes, (0, 0))
-        elif game_state in build_states:
-            screen.blit(bkg_build, (0, 0))
-            screen.blit(panes_build, (0, 0))
-        elif game_state in journey_states:
-            screen.blit(bkg_fight, (0, -200))
-
-        sauce = 74 * energy / 100
-        gauge(sauce, 283, 21, 16, (20, 210, 20))
-        sauce = 74 * experience / next_class
-        gauge(sauce, 128, 21, 16, (20, 20, 210))
-
-        if game_state == "main_menu" or "build_menu": # Draw stash
-            stash = [pixite, voxite, doxite, tyxite]
-            for p in range(4):
-                draw_text(f"x{stash[p]}", Fonts["helv22b"], stash_rgb[p], 1225, 90 + 40 * p)
-                screen.blit(Png[stash_names[p]], (1160, 70 + 40 * p))
-
-        if game_state == "main_menu":
-            if band[2][2].name != "-":
-                if Button(SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] - 68, Png["journey"], 1).draw() and not buttoncheck:
-                    buttoncheck = True
-                    game_state = "journey_menu"
-            if Button(285, SCREEN_SIZE[1] - y_btn, Png["build"], 1).draw() and not buttoncheck:
-                buttoncheck = True
-                game_state = "build_menu"
-            if Button(1000, SCREEN_SIZE[1] - y_btn, Png["band"], 1).draw() and not buttoncheck:
-                buttoncheck = True
-                game_state = "band_menu"
-                scroll = 0
-                band_init = True
-            if show_band:
-                display_band(0, 0)
-                hp_tmp = hp_band[x][y]
-
-        if game_state == "journey_menu":
-            if RightClick:
-                RightClick = False
-                RightHold = True
-                game_state = "main_menu"
-            if Button(center[0], center[1] + 200, Png["begin"], 1).draw() and not buttoncheck:
-                buttoncheck = True
-                game_state = "journey"
-                pygame.mixer.music.load("lib/bgm/Defender of Texel OST - Battle (bgm_005).ogg")  # Background music
-                pygame.mixer.music.play(-1, 0.0)  # Infinite song loop
-                journey_timer = 0
-                swipe_order = []
-                frontline = []
-                win_count = 0
-                num_fights = random.choice(range(1, 4))
-
-        if game_state == "fuse_setup":
-            if RightClick:
-                RightClick = False
-                RightHold = True
-                game_state = "band_menu"
-            b_keys = list(barracks.keys())
-            barracks_size = len(b_keys)
-            for n in range(barracks_size):
-                tmp = b_keys[n]
-                pick = barracks[tmp]
-                logo = Portrait[pick.name]
-                columns = 7
-                xx = 100 + space * 1.1 * (n % columns)
-                yy = 100 * (1 + n // columns)
-                if Button(xx, yy, logo, 1).draw() and not buttoncheck:
-                    buttoncheck = True
-                    selection = pick
-                    game_state = "fusion"
-                    fuse_setup = True
-                info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI, pick.LV, pick.SEF, pick.rarity]
-                cat = ["", "HP ", "ATK", "DEF", "WIS", "AGI", "LV ", "SEF", ""]
-                for j in range(len(info)):
-                    if j == 0:
-                        y_text = yy - 10
-                        font_a = Fonts["helv20b"]
-                    else:
-                        y_text = yy
-                        font_a = Fonts["helv10b"]
-                    x_text = xx - 50
-                    draw_text(f"{cat[j]} {info[j]}", font_a, Colors["white"], x_text, y_text + 18 * j)
-
-        if game_state == "build_menu":
-            if RightClick:
-                RightClick = False
-                RightHold = True
-                game_state = "main_menu"
-            x_build = [360, SCREEN_SIZE[0] - 400]
-            y_build = [230, SCREEN_SIZE[1] - 280]
-            stash_names = ["pixite", "voxite", "doxite", "tyxite"]
-            img_build = [Png["build-pixite"], Png["build-voxite"], Png["build-doxite"], Png["build-tyxite"]]
-            build_sel = 0
-            for n in range(4):
-                if Button(x_build[n//2], y_build[n%2], img_build[n], 1).draw() and not buttoncheck:
-                    buttoncheck = True
-                    build_sel = stash_names[n]
-            if build_sel == "pixite" and pixite >= 5:
-                pixite -= 5
-                build_pixite = True
-                game_state = "build_state"
-            elif build_sel == "voxite" and voxite >= 5:
-                voxite -= 5
-                build_voxite = True
-                game_state = "build_state"
-            elif build_sel == "doxite" and doxite >= 5:
-                doxite -= 5
-                build_doxite = True
-                game_state = "build_state"
-            elif build_sel == "tyxite" and tyxite >= 5:
-                tyxite -= 5
-                build_tyxite = True
-                game_state = "build_state"
-
-        if game_state == "build_state":
-            pull = {}
-            if build_pixite:
-                z = [["Uncommon", 10, 5]] * 5 + [["Common", 1, 1]] * 3
-                build_pixite = False
-            elif build_voxite:
-                z = [["Uncommon", 10, 5]] * 5 + [["Rare", 20, 10]] * 3
-                build_voxite = False
-            elif build_doxite:
-                z = [["Uncommon", 10, 5]] * 5 + [["Rare", 20, 10]] * 3 + [["Epic", 30, 15]] * 2
-                build_doxite = False
-            elif build_tyxite:
-                z = [["Rare", 20, 10]] * 3 + [["Epic", 30, 15]] * 2 + [["Legendary", 50, 25]]
-                build_tyxite = False
-            else:
-                z = []
-            for n in range(len(z)):
-                z_n = z[n]
-                pick = open(z_n[0])
-                before = pick
-                while pick in barracks.keys():
-                    p = 1
-                    pick = f"{pick}-{p}"
-                    p += 1
-                barracks[pick] = Fighter(before, pick)
-                barracks[pick].HP = random.choice(range(1, z_n[1] + 1))
-                if z[n] != "Common":
-                    barracks[pick].HP += 9
-                barracks[pick].ATK = random.choice(range(1, z_n[1] + 1))
-                barracks[pick].DEF = random.choice(range(1, z_n[1] + 1))
-                barracks[pick].WIS = random.choice(range(1, z_n[2] + 1))
-                barracks[pick].AGI = random.choice(range(1, z_n[2] + 1))
-                Portrait[before] = image(before)
-                pull[n] = barracks[pick]
-            game_state = "build_results"
-            band_sort = True
-            results_timer = 0
-            num_display = 0
-            num_total = len(pull.keys())
-
-        if game_state == "build_results":
-            if num_display < num_total:
-                results_timer += dt
-                if results_timer >= 1:
-                    num_display += 1
-            elif Button(SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] - 50, Png["continue"], 1).draw() and not buttoncheck:
-                buttoncheck = True
-                game_state = "build_menu"
-            for n in range(num_display):
-                pull_n = pull[n]
-                logo_result = Portrait[pull_n.name]
-                xx = 110 + space * 1.5 * (n % 4)
-                yy = 110 + 230 * (n // 4)
-                screen.blit(logo_result, (xx, yy))
-                info = [
-                    pull_n.name,
-                    pull_n.HP,
-                    pull_n.ATK,
-                    pull_n.DEF,
-                    pull_n.WIS,
-                    pull_n.AGI,
-                    pull_n.LV,
-                    pull_n.SEF,
-                    pull_n.rarity,
-                ]
-                cat = ["", "HP ", "ATK", "DEF", "WIS", "AGI", "LV ", "SEF", ""]
-                for j in range(len(info)):
-                    if j == 0:
-                        y_text = yy - 10
-                        font_a = Fonts["helv25b"]
-                    else:
-                        y_text = yy
-                        font_a = Fonts["helv15b"]
-                    x_text = xx - 50
-                    draw_text(f"{cat[j]} {info[j]}", font_a, Colors["white"], x_text, y_text + 18 * j)
-
-        if game_state == "fusion":
-            if RightClick:
-                RightClick = False
-                RightHold = True
-                game_state = "band_menu"
-            # fusion mechanics
-            if fuse_setup:
-                fuse_list = []
-                fuse_counter = 0
-                if fuse_type == "self":
-                    name_fuse = [selection.name]
-                elif fuse_type == "fodder":
-                    name_fuse = ["Fodder", "Ikuppi", "Banunu", "Sirsir"]
-                b_names = list(barracks.keys())
-                fuse_dict = {}
-                counter = 0
-                for n in range(len(b_names)):
-                    a = barracks[b_names[n]]
-                    name_checker = a.name
-                    if name_checker in name_fuse and selection != a:
-                        fuse_dict[counter] = b_names[n]
-                        counter += 1
-                check_fuse = [
-                    False,
-                ] * counter
-                fuse_setup = False
-            for m in range(counter):
-                pick = barracks[fuse_dict[m]]
-                logo = Portrait[pick.name]
-                columns = 7
-                xx = 100 + space * 1.1 * (m % columns)
-                yy = 100 * (1 + 1.5 * (m // columns))
-                if Button(xx, yy, logo, 1).draw() and not buttoncheck:
-                    if fuse_counter < 8:
-                        buttoncheck = True
-                        check_fuse[m] = not check_fuse[m]
-                        if not check_fuse[m]:
-                            fuse_counter -= 1
-                            fuse_list.remove(pick.keyname)
-                        else:
-                            fuse_list.append(pick.keyname)
-                            fuse_counter += 1
-                        print(f"Count: {fuse_counter} // {fuse_list}")
-                if check_fuse[m]:
-                    screen.blit(Png["check"], (xx - 73, yy - 15))
-                info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI, pick.LV, pick.SEF, pick.rarity]
-                cat = ["", "HP ", "ATK", "DEF", "WIS", "AGI", "LV ", "SEF", ""]
-                for j in range(len(info)):
-                    if j == 0:
-                        y_text = yy - 10
-                        font_a = Fonts["helv20b"]
-                    else:
-                        y_text = yy
-                        font_a = Fonts["helv10b"]
-                    x_text = xx - 50
-                    draw_text(f"{cat[j]} {info[j]}", font_a, Colors["white"], x_text, y_text + 18 * j)
+    if game_state == "fusion":
+        # fusion mechanics
+        if fuse_setup:
+            fuse_list = []
+            fuse_counter = 0
             if fuse_type == "self":
-                fuse_toggle = Png["fodder"]
+                name_fuse = [selection.name]
             elif fuse_type == "fodder":
-                fuse_toggle = Png["self"]
-            if Button(800, SCREEN_SIZE[1] - 100, fuse_toggle, 1).draw() and not buttoncheck:
-                buttoncheck = True
-                if fuse_type == "self":
-                    fuse_type = "fodder"
+                name_fuse = ["Fodder", "Ikuppi", "Banunu", "Sirsir"]
+            b_names = list(barracks.keys())
+            fuse_dict = {}
+            counter = 0
+            for n in range(len(b_names)):
+                a = barracks[b_names[n]]
+                name_checker = a.name
+                if name_checker in name_fuse and selection != a:
+                    fuse_dict[counter] = b_names[n]
+                    counter += 1
+            check_fuse = [
+                False,
+            ] * counter
+            fuse_setup = False
+        for m in range(counter):
+            pick = barracks[fuse_dict[m]]
+            logo = Portrait[pick.name]
+            columns = 7
+            xx = 100 + space * 1.1 * (m % columns)
+            yy = 100 * (1 + 1.5 * (m // columns))
+            if Button(xx, yy, logo, 1).draw() and not buttoncheck:
+                if fuse_counter < 8:
+                    buttoncheck = True
+                    check_fuse[m] = not check_fuse[m]
+                    if not check_fuse[m]:
+                        fuse_counter -= 1
+                        fuse_list.remove(pick.keyname)
+                    else:
+                        fuse_list.append(pick.keyname)
+                        fuse_counter += 1
+                    print(f"Count: {fuse_counter} // {fuse_list}")
+            if check_fuse[m]:
+                screen.blit(Png["check"], (xx - 73, yy - 15))
+            info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI, pick.LV, pick.SEF, pick.rarity]
+            cat = ["", "HP ", "ATK", "DEF", "WIS", "AGI", "LV ", "SEF", ""]
+            for j in range(len(info)):
+                if j == 0:
+                    y_text = yy - 10
+                    font_a = Fonts["helv20b"]
                 else:
-                    fuse_type = "self"
-                fuse_setup = True
-            if fuse_counter > 0:
-                if Button(500, SCREEN_SIZE[1] - 100, Png["fuse"], 1).draw() and not buttoncheck:
-                    fuse_num = fuse_counter
-                    game_state = "fuse_animation"
-                    fuse_timer = 0
-                    fuse_complete = False
+                    y_text = yy
+                    font_a = Fonts["helv10b"]
+                x_text = xx - 50
+                draw_text(f"{cat[j]} {info[j]}", font_a, Colors["white"], x_text, y_text + 18 * j)
+        if fuse_type == "self":
+            fuse_toggle = Png["fodder"]
+        elif fuse_type == "fodder":
+            fuse_toggle = Png["self"]
+        if Button(800, SCREEN_SIZE[1] - 100, fuse_toggle, 1).draw() and not buttoncheck:
+            buttoncheck = True
+            if fuse_type == "self":
+                fuse_type = "fodder"
+            else:
+                fuse_type = "self"
+            fuse_setup = True
+        if fuse_counter > 0:
+            if Button(500, SCREEN_SIZE[1] - 100, Png["fuse"], 1).draw() and not buttoncheck:
+                fuse_num = fuse_counter
+                game_state = "fuse_animation"
+                fuse_timer = 0
+                fuse_complete = False
 
-        if game_state == "fuse_animation":
-            fuse_timer += dt
-            if 1 <= fuse_timer < 1.2 and not fuse_complete:
-                xp = 0
-                for n in range(fuse_num):
-                    xp += barracks[fuse_list[n]].XP
-                    del barracks[fuse_list[n]]
-                    xp += 10
-                if fuse_num == 8:
-                    mult_xp = 2
-                    xp *= 2
-                else:
-                    mult_xp = 1 + (0.125 * (fuse_num - 1))
-                xp *= mult_xp
-                selection.XP += xp
-                fuse_complete = True
-            elif fuse_timer >= 1.2:
-                draw_text(f"{selection.name}: {selection.XP}XP", Fonts["helv35b"], Colors["black"], 600, 280)
-                draw_text(f"+{xp}", Fonts["helv25b"], Colors["black"], 800, 350)
-                fuse_disp = resize(Portrait[selection.name], 250, 'height')
-                screen.blit(fuse_disp, [500, 300])
-            if fuse_timer >= 3:
-                band_sort = True
-                game_state = "main_menu"
+    if game_state == "fuse_animation":
+        fuse_timer += dt
+        if 1 <= fuse_timer < 1.2 and not fuse_complete:
+            xp = 0
+            for n in range(fuse_num):
+                xp += barracks[fuse_list[n]].XP
+                del barracks[fuse_list[n]]
+                xp += 10
+            if fuse_num == 8:
+                mult_xp = 2
+                xp *= 2
+            else:
+                mult_xp = 1 + (0.125 * (fuse_num - 1))
+            xp *= mult_xp
+            selection.XP += xp
+            fuse_complete = True
+        elif fuse_timer >= 1.2:
+            draw_text(f"{selection.name}: {selection.XP}XP", Fonts["helv35b"], Colors["black"], 600, 280)
+            draw_text(f"+{xp}", Fonts["helv25b"], Colors["black"], 800, 350)
+            fuse_disp = resize(Portrait[selection.name], 250, 'height')
+            screen.blit(fuse_disp, [500, 300])
+        if fuse_timer >= 3:
+            band_sort = True
+            game_state = "main_menu"
 
-        if game_state == "band_menu":
-            if Button(1000, SCREEN_SIZE[1] - y_btn, Png["fuse_setup"], 1).draw() and not buttoncheck:
+    if game_state == "band_menu":
+        if Button(1000, SCREEN_SIZE[1] - y_btn, Png["fuse_setup"], 1).draw() and not buttoncheck:
+            buttoncheck = True
+            game_state = "fuse_setup"
+        if band_init:
+            reserves = barracks.copy()
+            band_init = False
+            swap_ready = False
+            selection_made = False
+            swap_x = -1
+            swap_y = -1
+            selection = empty
+            for x in range(3):
+                for y in range(3):
+                    name_key = band[x][y].keyname
+                    if name_key in reserves:
+                        del reserves[band[x][y].keyname]
+        # Display band
+        for x in range(3):
+            for y in range(3):
+                if len(xyz) >= x * 3 + y + 1:
+                    pick = band[x][y]
+                    pos = my_band_pos[x][y]
+                    hp_tmp = hp_band[x][y]
+                    if Button(pos[0], pos[1], Portrait[pick.name], 1).draw() and not buttoncheck:
+                        buttoncheck = True
+                        if swap_x != x and swap_y != y:
+                            swap_x = x
+                            swap_y = y
+                        else:
+                            swap_ready = False
+                            swap_x = -1
+                            swap_y = -1
+                    draw_text(f"LV {pick.LV}", Fonts["helv15b"], Colors["black"], pos[0] + 20, pos[1] + 80)
+        if swap_x >= 0:
+            swap_ready = True
+            rx = my_band_pos[swap_x][swap_y][0]
+            ry = my_band_pos[swap_x][swap_y][1]
+            sqr_sz = space * 0.7
+            rectangle = pygame.Rect(rx - 60, ry - 30, sqr_sz, sqr_sz)
+            pygame.draw.rect(screen, Colors["red"], rectangle, 4)
+        # Display barracks
+        r_keys = list(reserves.keys())
+        r_size = len(r_keys)
+        og_size = len(r_keys)
+        columns = 4
+        rows = 4
+        area = columns * rows
+        if r_size > area:
+            r_size = area
+            if K_s in keys_pressed:
+                keys_pressed.remove(K_s)
+                limit = og_size // columns - columns
+                if scroll < limit:
+                    scroll += 1
+            if K_w in keys_pressed and scroll > 0:
+                keys_pressed.remove(K_w)
+                scroll -= 1
+        x_s = (rows + scroll) * columns
+        if x_s > og_size:  # Trim the size
+            r_size -= x_s - og_size
+        for n in range(r_size):
+            tmp = r_keys[n + scroll * columns]
+            pick = reserves[tmp]
+            logo = Portrait[pick.name]
+            xx = 500 + space * 1.1 * (n % columns)
+            yy = 140 * (1 + n // columns) - 20
+            if Button(xx, yy, logo, 1).draw() and not buttoncheck:
                 buttoncheck = True
-                game_state = "fuse_setup"
-            if RightClick:
-                RightClick = False
-                RightHold = True
-                game_state = "main_menu"
-            if band_init:
-                reserves = barracks.copy()
-                band_init = False
+                if selection != pick:
+                    selection = pick
+                else:
+                    selection_made = False
+                    selection = empty
+            if selection.keyname == tmp:
+                selection_made = True
+                sqr_sz = space * 0.7
+                rectangle = pygame.Rect(xx - 60, yy, sqr_sz, sqr_sz)
+                pygame.draw.rect(screen, Colors["red"], rectangle, 4)
+            # Display info
+            info = [pick.name, pick.rarity, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI, pick.LV, pick.SEF]
+            cat = ["", "", "HP ", "ATK", "DEF", "WIS", "AGI", "LV ", "SEF"]
+            font_lib = [Fonts["helv10b"]] * len(info)
+            font_lib[0] = Fonts["helv20b"]
+            y_0 = yy - 35
+            y_lib = [y_0] * len(info)
+            y_lib[0] = y_0 - 10
+            x_text = xx - 80
+            for j in range(len(info)):
+                font_a = font_lib[j]
+                y_text = y_lib[j]
+                y_spc = 14
+                draw_text(f"{cat[j]} {info[j]}", font_a, Colors["white"], x_text, y_text + y_spc * j)
+            if swap_ready and selection_made:
                 swap_ready = False
                 selection_made = False
-                swap_x = -1
-                swap_y = -1
-                selection = empty
-                for x in range(3):
-                    for y in range(3):
-                        name_key = band[x][y].keyname
-                        if name_key in reserves:
-                            del reserves[band[x][y].keyname]
-            # Display band
-            for x in range(3):
-                for y in range(3):
-                    if len(xyz) >= x * 3 + y + 1:
-                        pick = band[x][y]
-                        pos = my_band_pos[x][y]
-                        hp_tmp = hp_band[x][y]
-                        if Button(pos[0], pos[1], Portrait[pick.name], 1).draw() and not buttoncheck:
-                            buttoncheck = True
-                            if swap_x != x and swap_y != y:
-                                swap_x = x
-                                swap_y = y
-                            else:
-                                swap_ready = False
-                                swap_x = -1
-                                swap_y = -1
-                        draw_text(f"LV {pick.LV}", Fonts["helv15b"], Colors["black"], pos[0] + 20, pos[1] + 80)
-            if swap_x >= 0:
-                swap_ready = True
-                rx = my_band_pos[swap_x][swap_y][0]
-                ry = my_band_pos[swap_x][swap_y][1]
-                sqr_sz = space * 0.7
-                rectangle = pygame.Rect(rx - 60, ry - 30, sqr_sz, sqr_sz)
-                pygame.draw.rect(screen, Colors["red"], rectangle, 4)
-            # Display barracks
-            r_keys = list(reserves.keys())
-            r_size = len(r_keys)
-            og_size = len(r_keys)
-            columns = 4
-            rows = 4
-            area = columns * rows
-            if r_size > area:
-                r_size = area
-                if K_s in keys_pressed:
-                    keys_pressed.remove(K_s)
-                    limit = og_size // columns - columns
-                    if scroll < limit:
-                        scroll += 1
-                if K_w in keys_pressed and scroll > 0:
-                    keys_pressed.remove(K_w)
-                    scroll -= 1
-            x_s = (rows + scroll) * columns
-            if x_s > og_size:  # Trim the size
-                r_size -= x_s - og_size
-            for n in range(r_size):
-                tmp = r_keys[n + scroll * columns]
-                pick = reserves[tmp]
-                logo = Portrait[pick.name]
-                xx = 500 + space * 1.1 * (n % columns)
-                yy = 140 * (1 + n // columns) - 20
-                if Button(xx, yy, logo, 1).draw() and not buttoncheck:
-                    buttoncheck = True
-                    if selection != pick:
-                        selection = pick
-                    else:
-                        selection_made = False
-                        selection = empty
-                if selection.keyname == tmp:
-                    selection_made = True
-                    sqr_sz = space * 0.7
-                    rectangle = pygame.Rect(xx - 60, yy, sqr_sz, sqr_sz)
-                    pygame.draw.rect(screen, Colors["red"], rectangle, 4)
-                # Display info
-                info = [pick.name, pick.rarity, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI, pick.LV, pick.SEF]
-                cat = ["", "", "HP ", "ATK", "DEF", "WIS", "AGI", "LV ", "SEF"]
-                font_lib = [Fonts["helv10b"]] * len(info)
-                font_lib[0] = Fonts["helv20b"]
-                y_0 = yy - 35
-                y_lib = [y_0] * len(info)
-                y_lib[0] = y_0 - 10
-                x_text = xx - 80
-                for j in range(len(info)):
-                    font_a = font_lib[j]
-                    y_text = y_lib[j]
-                    y_spc = 14
-                    draw_text(f"{cat[j]} {info[j]}", font_a, Colors["white"], x_text, y_text + y_spc * j)
-                if swap_ready and selection_made:
-                    swap_ready = False
-                    selection_made = False
-                    tmp = band[swap_x][swap_y]
-                    barracks[tmp.keyname] = tmp
-                    band[swap_x][swap_y] = selection
-                    band_init = True
+                tmp = band[swap_x][swap_y]
+                barracks[tmp.keyname] = tmp
+                band[swap_x][swap_y] = selection
+                band_init = True
 
-        if game_state == "journey":
-            y_max = 20
-            rate = 50
-            if y_walk < y_max and not y_neg:
-                y_walk += dt*rate
-            elif y_walk < 0:
-                y_neg = False
-            elif y_walk >= y_max:
-                y_neg = True
-                y_walk = y_max - 1
-            elif y_neg:
-                y_walk -= dt * (rate * 0.5)
-            display_band(0, y_walk)
-            # Journey progress bar
-            journey_bar = 220
-            gauge(journey_bar, 500, 600, 25, Colors["grey"])
-            progress = win_count * 3 + journey_timer
-            sauce = journey_bar * progress / (3 * num_fights)
-            gauge(sauce, 500, 600, 25, Colors["cyan"])
-            if win_count == num_fights:
-                game_state = "journey_complete"
-            elif not encounter:
-                journey_timer += dt
-                if journey_timer >= 3:
-                    encounter = True
-                    enemy_power = 0
-                    og_health = [0, 0, 0]
-                    enemy_xp = 0
-                    for x in range(3):
-                        pick = open("Uncommon")
-                        enemies[x] = Fighter(pick, pick)
-                        Portrait[pick] = image(pick)
-                        enemies[x].HP = random.choice(range(20, 81))
-                        og_health[x] = enemies[x].HP
-                        enemies[x].ATK = random.choice(range(1, 6))
-                        enemies[x].XP = int((enemies[x].HP / 5) + (enemies[x].ATK / 2))
-                        enemy_xp += enemies[x].XP
-                        enemy_power += enemies[x].ATK
-            elif encounter and game_state != "fight":
-                if Button(center[0], center[1], Png["fight"], 1).draw() and not buttoncheck:
-                    game_state = "fight"
-                    attack_counter = 0
-                    attack_state = False
-                    enemy_attack = False
-                    attack_setup = False
-                    frontline = []
-                    swipe_order = []
-                    queue = 0
-                    buttoncheck = True
-
-        if game_state == "journey_complete":
-            fade = 0.4
-            dB -= dt * fade
-            if dB < 0:
-                dB = 0
-            pygame.mixer.music.set_volume(dB)
+    if game_state == "journey":
+        y_max = 20
+        rate = 50
+        if y_walk < y_max and not y_neg:
+            y_walk += dt*rate
+        elif y_walk < 0:
+            y_neg = False
+        elif y_walk >= y_max:
+            y_neg = True
+            y_walk = y_max - 1
+        elif y_neg:
+            y_walk -= dt * (rate * 0.5)
+        display_band(0, y_walk)
+        # Journey progress bar
+        journey_bar = 220
+        gauge(journey_bar, 500, 600, 25, Colors["grey"])
+        progress = win_count * 3 + journey_timer
+        sauce = journey_bar * progress / (3 * num_fights)
+        gauge(sauce, 500, 600, 25, Colors["cyan"])
+        if win_count == num_fights:
+            game_state = "journey_complete"
+        elif not encounter:
             journey_timer += dt
-            if not claimed:
-                prize = [0, 0, 0, 0]
-                odds = [1, 3, 5, 10]
-                for n in range(4):
-                    prize[n] = random.choice(range(5, 11))
-                pixite += prize[0] // odds[0]
-                voxite += prize[1] // odds[1]
-                doxite += prize[2] // odds[2]
-                tyxite += prize[3] // odds[3]
-                claimed = True
-            draw_text(f"Journey Complete", Fonts["helv50b"], Colors["white"], 460, 250)
-            clr = [Colors["orange"], Colors["white"], Colors["yellow"], Colors["red"]]
-            for p in range(4):
-                draw_text(f"+{prize[p] // odds[p]}", Fonts["helv40b"], clr[p], 500, 300 + 40 * p)
             if journey_timer >= 3:
-                pygame.mixer.music.load("lib/bgm/Defender of Texel OST - Menu (bgm_001).ogg")  # Background music
-                pygame.mixer.music.set_volume(1.0)
-                pygame.mixer.music.play(-1, 0.0)
-                journey_timer = 0
-                game_state = "main_menu"
-
-        if game_state == "failure":
-            fail_time += dt
-            draw_text(f"Journey Failed", Fonts["helv50b"], Colors["red"], 460, 250)
-            prize = 2
-            pixite += prize
-            draw_text(f"+{prize}", Fonts["helv40b"], Colors["orange"], 500, 380)
-            if fail_time >= 3:
-                fail_time = 0
-                game_state = "main_menu"
-
-        if band_sort:
-            band_sort = False
-            show_band = True
-            overkill = 0
-            frontline = []
-            # Sort by strength
-            sort_dict = {}
-            xyz = list(barracks.keys())
-            for k in range(len(xyz)):
-                x_name = xyz[k]
-                sort_dict[x_name] = barracks[x_name].ATK
-            sort_dict = dict(sorted(sort_dict.items(), key=lambda item: item[1], reverse=True))
-            sorted_names = list(sort_dict.keys())
-            lineup = np.array([[3, 1, 4], [5, 0, 6], [7, 2, 8]])
-            for x in range(3):
-                for y in range(3):
-                    index = lineup[x][y]
-                    if len(xyz) >= x * 3 + y + 1:
-                        band[x][y] = barracks[sorted_names[index]]  # Automatically assign band of fighter
-                        hp_band[x][y] = band[x][y].HP
-
-        if game_state == "fight":
-            s = pygame.Surface((540, 545), pygame.SRCALPHA)
-            s.fill((25, 25, 25, 100))
-            screen.blit(s, (bx, by))
-            health_pool = 0
-            display_band(-260, -160)
-            for x in range(3):
-                if enemies[x].HP > 0:
-                    enemy_hp = enemies[x].HP
-                    health_pool += enemy_hp
-                    q = len(f"{enemy_hp}")
-                    villain = Portrait[enemies[x].name]
-                    villain = pygame.transform.flip(villain, True, False)
-                    enemy_portrait = colorize(villain, Colors["red"])
-                    fgauge = 100 * enemy_hp / og_health[x]
-                    rectangle = pygame.Rect(enemies_pos[0][0], 220 + space * x, fgauge, 15)
-                    pygame.draw.rect(screen, Colors["red"], rectangle)
-                    draw_text(f"{enemy_hp} HP", Fonts["helv10"], Colors["white"], enemies_pos[0][0] + 3, 223 + space * x)
-                    screen.blit(villain, enemies_pos[x])
-                    screen.blit(enemy_portrait, enemies_pos[x])
-                for y in range(3):
-                    pick = band[x][y]
-                    pos = band_pos[x][y]
-                    hp_tmp = hp_band[x][y]
-                    if hp_tmp <= 0:
-                        band[x][y] = empty
-                    else:
-                        q = len(f"{hp_tmp}")
-                        fgauge = 100 * hp_tmp / pick.HP
-                        rectangle = pygame.Rect(pos[0], pos[1], fgauge, 15)
-                        pygame.draw.rect(screen, Colors["red"], rectangle)
-                        # Draw band info
-                        draw_text(f"{hp_tmp} HP", Fonts["helv10"], Colors["white"], pos[0] + 3, pos[1] + 3)
-                        draw_text(f"LV {pick.LV}", Fonts["helv15b"], Colors["orange"], pos[0] + 25, pos[1] + 125)
-                        draw_text(f"{pick.ATK} ATK", Fonts["helv15b"], Colors["red"], pos[0] + 90, pos[1] + 125)
-
-            if health_pool == 0 and not victory:
-                victory = True
-                enemy_attack = False
-                attack_state = False
-                enemy_done = True
-                attack_counter = 0
-                queue = 0
+                encounter = True
                 enemy_power = 0
-                victory_time = 0
-
-            total_health = np.sum(hp_band)
-            if total_health <= 0:
-                death_time += dt
-
-            if death_time > 3:
-                game_state = "failure"
-                enemy_power = 0
-                fail_time = 0
-                death_time = 0
-                encounter = False
-                journey_timer = 0
-
-            if victory:
-                victory_time += dt
-
-            if victory_time >= 3:
+                og_health = [0, 0, 0]
+                enemy_xp = 0
                 for x in range(3):
-                    for y in range(3):
-                        mod = 1
-                        if band[x][y].XP > 0:  # If member is dead, half experience
-                            mod = 0.5
-                        band[x][y].XP += enemy_xp * mod
-                win_count += 1
-                encounter = False
-                game_state = "journey"
-                victory = False
-                victory_time = 0
-                journey_timer = 0
+                    pick = open("Uncommon")
+                    enemies[x] = Fighter(pick, pick)
+                    Portrait[pick] = image(pick)
+                    enemies[x].HP = random.choice(range(20, 81))
+                    og_health[x] = enemies[x].HP
+                    enemies[x].ATK = random.choice(range(1, 6))
+                    enemies[x].XP = int((enemies[x].HP / 5) + (enemies[x].ATK / 2))
+                    enemy_xp += enemies[x].XP
+                    enemy_power += enemies[x].ATK
+        elif encounter and game_state != "fight":
+            if Button(center[0], center[1], Png["fight"], 1).draw() and not buttoncheck:
+                game_state = "fight"
+                attack_counter = 0
                 attack_state = False
                 enemy_attack = False
+                attack_setup = False
+                frontline = []
+                swipe_order = []
+                queue = 0
+                buttoncheck = True
+
+    if game_state == "journey_complete":
+        fade = 0.4
+        dB -= dt * fade
+        if dB < 0:
+            dB = 0
+        pygame.mixer.music.set_volume(dB)
+        journey_timer += dt
+        if not claimed:
+            prize = [0, 0, 0, 0]
+            odds = [1, 3, 5, 10]
+            for n in range(4):
+                prize[n] = random.choice(range(5, 11))
+            pixite += prize[0] // odds[0]
+            voxite += prize[1] // odds[1]
+            doxite += prize[2] // odds[2]
+            tyxite += prize[3] // odds[3]
+            claimed = True
+        draw_text(f"Journey Complete", Fonts["helv50b"], Colors["white"], 460, 250)
+        clr = [Colors["orange"], Colors["white"], Colors["yellow"], Colors["red"]]
+        for p in range(4):
+            draw_text(f"+{prize[p] // odds[p]}", Fonts["helv40b"], clr[p], 500, 300 + 40 * p)
+        if journey_timer >= 3:
+            pygame.mixer.music.load("lib/bgm/Defender of Texel OST - Menu (bgm_001).ogg")  # Background music
+            pygame.mixer.music.set_volume(1.0)
+            pygame.mixer.music.play(-1, 0.0)
+            journey_timer = 0
+            game_state = "main_menu"
+
+    if game_state == "failure":
+        fail_time += dt
+        draw_text(f"Journey Failed", Fonts["helv50b"], Colors["red"], 460, 250)
+        prize = 2
+        pixite += prize
+        draw_text(f"+{prize}", Fonts["helv40b"], Colors["orange"], 500, 380)
+        if fail_time >= 3:
+            fail_time = 0
+            game_state = "main_menu"
+
+    if band_sort:
+        band_sort = False
+        show_band = True
+        overkill = 0
+        frontline = []
+        # Sort by strength
+        sort_dict = {}
+        xyz = list(barracks.keys())
+        for k in range(len(xyz)):
+            x_name = xyz[k]
+            sort_dict[x_name] = barracks[x_name].ATK
+        sort_dict = dict(sorted(sort_dict.items(), key=lambda item: item[1], reverse=True))
+        sorted_names = list(sort_dict.keys())
+        lineup = np.array([[3, 1, 4], [5, 0, 6], [7, 2, 8]])
+        for x in range(3):
+            for y in range(3):
+                index = lineup[x][y]
+                if len(xyz) >= x * 3 + y + 1:
+                    band[x][y] = barracks[sorted_names[index]]  # Automatically assign band of fighter
+                    hp_band[x][y] = band[x][y].HP
+
+    if game_state == "fight":
+        s = pygame.Surface((540, 545), pygame.SRCALPHA)
+        s.fill((25, 25, 25, 100))
+        screen.blit(s, (bx, by))
+        health_pool = 0
+        display_band(-260, -160)
+        for x in range(3):
+            if enemies[x].HP > 0:
+                enemy_hp = enemies[x].HP
+                health_pool += enemy_hp
+                q = len(f"{enemy_hp}")
+                villain = Portrait[enemies[x].name]
+                villain = pygame.transform.flip(villain, True, False)
+                enemy_portrait = colorize(villain, Colors["red"])
+                fgauge = 100 * enemy_hp / og_health[x]
+                rectangle = pygame.Rect(enemies_pos[0][0], 220 + space * x, fgauge, 15)
+                pygame.draw.rect(screen, Colors["red"], rectangle)
+                draw_text(f"{enemy_hp} HP", Fonts["helv10"], Colors["white"], enemies_pos[0][0] + 3, 223 + space * x)
+                screen.blit(villain, enemies_pos[x])
+                screen.blit(enemy_portrait, enemies_pos[x])
+            for y in range(3):
+                pick = band[x][y]
+                pos = band_pos[x][y]
+                hp_tmp = hp_band[x][y]
+                if hp_tmp <= 0:
+                    band[x][y] = empty
+                else:
+                    q = len(f"{hp_tmp}")
+                    fgauge = 100 * hp_tmp / pick.HP
+                    rectangle = pygame.Rect(pos[0], pos[1], fgauge, 15)
+                    pygame.draw.rect(screen, Colors["red"], rectangle)
+                    # Draw band info
+                    draw_text(f"{hp_tmp} HP", Fonts["helv10"], Colors["white"], pos[0] + 3, pos[1] + 3)
+                    draw_text(f"LV {pick.LV}", Fonts["helv15b"], Colors["orange"], pos[0] + 25, pos[1] + 125)
+                    draw_text(f"{pick.ATK} ATK", Fonts["helv15b"], Colors["red"], pos[0] + 90, pos[1] + 125)
+
+        if health_pool == 0 and not victory:
+            victory = True
+            enemy_attack = False
+            attack_state = False
+            enemy_done = True
+            attack_counter = 0
+            queue = 0
+            enemy_power = 0
+            victory_time = 0
+
+        total_health = np.sum(hp_band)
+        if total_health <= 0:
+            death_time += dt
+
+        if death_time > 3:
+            game_state = "failure"
+            enemy_power = 0
+            fail_time = 0
+            death_time = 0
+            encounter = False
+            journey_timer = 0
+
+        if victory:
+            victory_time += dt
+
+        if victory_time >= 3:
+            for x in range(3):
+                for y in range(3):
+                    mod = 1
+                    if band[x][y].XP > 0:  # If member is dead, half experience
+                        mod = 0.5
+                    band[x][y].XP += enemy_xp * mod
+            win_count += 1
+            encounter = False
+            game_state = "journey"
+            victory = False
+            victory_time = 0
+            journey_timer = 0
+            attack_state = False
+            enemy_attack = False
+            swipe_order = []
+            frontline = []
+            claimed = False
+
+        # Swipe selections
+        swipe_colors = [Colors["yellow"], Colors["orange"], Colors["red"]]
+        if len(swipe_order) > 3:
+            swipe_order = swipe_order[:3]
+        for x in range(len(swipe_order)):
+            rectangle = pygame.Rect(-50, -50, 10, 10)
+            index = x
+            if list(swipe_order)[index] == K_1:
+                rx = band_pos[0][0][0]
+                ry = band_pos[0][0][1]
+                rectangle = pygame.Rect(rx - 5, ry - 15, space + 5, space * 3 + 15)
+            elif list(swipe_order)[index] == K_2:
+                rx = band_pos[1][0][0]
+                ry = band_pos[1][0][1]
+                rectangle = pygame.Rect(rx - 5, ry - 15, space + 5, space * 3 + 15)
+            elif list(swipe_order)[index] == K_3:
+                rx = band_pos[2][0][0]
+                ry = band_pos[2][0][1]
+                rectangle = pygame.Rect(rx - 5, ry - 15, space + 5, space * 3 + 15)
+            elif list(swipe_order)[index] == K_4:
+                rx = band_pos[0][0][0]
+                ry = band_pos[0][0][1]
+                rectangle = pygame.Rect(rx - 10, ry - 10, space * 3 + 20, space + 5)
+            elif list(swipe_order)[index] == K_5:
+                rx = band_pos[0][1][0]
+                ry = band_pos[0][1][1]
+                rectangle = pygame.Rect(rx - 10, ry - 10, space * 3 + 20, space + 5)
+            elif list(swipe_order)[index] == K_6:
+                rx = band_pos[0][2][0]
+                ry = band_pos[0][2][1]
+                rectangle = pygame.Rect(rx - 10, ry - 10, space * 3 + 20, space + 5)
+            elif list(swipe_order)[index] == K_7:
+                rx = band_pos[0][0][0]
+                ry = band_pos[0][0][1] + 10
+                vertices = [
+                    (rx - 35, ry + space / 2),
+                    (rx + space / 2, ry - 35),
+                    (rx + space * 3.2, ry + space * 2.5),
+                    (rx + space * 2.5, ry + space * 3.2),
+                ]
+                pygame.draw.polygon(screen, swipe_colors[x], vertices, 4)  # Draw the polygon
+            elif list(swipe_order)[index] == K_8:
+                rx = band_pos[2][0][0] + space - 4
+                ry = band_pos[2][0][1] + 8
+                vertices = [
+                    (rx + 35, ry + space / 2),
+                    (rx - space / 2, ry - 35),
+                    (rx - space * 3.2, ry + space * 2.5),
+                    (rx - space * 2.5, ry + space * 3.2),
+                ]
+                pygame.draw.polygon(screen, swipe_colors[x], vertices, 4)  # Draw the polygon
+            pygame.draw.rect(screen, swipe_colors[x], rectangle, 4)
+
+        if len(swipe_order) == 3 and not attack_state:
+            attack_setup = True
+            attack_state = True
+
+        if attack_setup:
+            attack_setup = False
+            attack_counter = 0
+            for n in range(3):
+                attack_order[n] = frontline[n]
+
+        if attack_state:  # Attack animations
+            attack_timer += dt
+            power = 0
+            t1 = 0.6
+            t2 = 0.82
+            t3 = 1.6
+            speed = 1300
+            if attack_counter < 3:
+                if t1 < attack_timer <= t2:
+                    xx = front_pos[0] + (attack_timer - t1) * speed
+                elif t2 < attack_timer <= t3:
+                    strike = True
+                    xx = front_pos[0] + (t2 - t1) * speed - (attack_timer - t2) * 400
+                    for j in range(3):
+                        draw_text(
+                            f"-{damage[j]}",
+                            Fonts["helv30b"],
+                            dmg_color[j],
+                            enemies_pos[0][0] - 20,
+                            enemies_pos[0][1] + space * j,
+                        )
+                    if xx < front_pos[0]:
+                        xx = front_pos[0]
+                for y in range(3):
+                    k = attack_counter
+                    screen.blit(Portrait[attack_order[k][y].name], (xx, front_pos[1] + space * y))
+                    power += attack_order[k][y].ATK
+                else:
+                    xx = front_pos[0]
+            if strike and not strike_hold:
+                dmg_color = [
+                    Colors["orange"],
+                ] * 3
+                for j in range(3):
+                    modifier = 1
+                    crit_chance = 100
+                    if 1 == random.choice(range(crit_chance)):
+                        dmg_color[j] = Colors["red"]  # Damage is red if crit
+                        modifier = 10
+                    damage[j] = power * modifier
+                    enemies[j].HP -= damage[j]
+                    if enemies[j].HP < 0:
+                        overkill -= enemies[j].HP
+                        enemies[j].HP = 0
+                strike_hold = True
+                strike = False
+            if attack_timer >= 2:
+                attack_counter += 1
+                if victory:
+                    attack_counter = 3
+                attack_timer = 0
+                strike_hold = False
+                strike = False
+            if attack_counter == 3:
+                enemy_attack = True
                 swipe_order = []
                 frontline = []
-                claimed = False
-
-            # Swipe selections
-            swipe_colors = [Colors["yellow"], Colors["orange"], Colors["red"]]
-            if len(swipe_order) > 3:
-                swipe_order = swipe_order[:3]
-            for x in range(len(swipe_order)):
-                rectangle = pygame.Rect(-50, -50, 10, 10)
-                index = x
-                if list(swipe_order)[index] == K_1:
-                    rx = band_pos[0][0][0]
-                    ry = band_pos[0][0][1]
-                    rectangle = pygame.Rect(rx - 5, ry - 15, space + 5, space * 3 + 15)
-                elif list(swipe_order)[index] == K_2:
-                    rx = band_pos[1][0][0]
-                    ry = band_pos[1][0][1]
-                    rectangle = pygame.Rect(rx - 5, ry - 15, space + 5, space * 3 + 15)
-                elif list(swipe_order)[index] == K_3:
-                    rx = band_pos[2][0][0]
-                    ry = band_pos[2][0][1]
-                    rectangle = pygame.Rect(rx - 5, ry - 15, space + 5, space * 3 + 15)
-                elif list(swipe_order)[index] == K_4:
-                    rx = band_pos[0][0][0]
-                    ry = band_pos[0][0][1]
-                    rectangle = pygame.Rect(rx - 10, ry - 10, space * 3 + 20, space + 5)
-                elif list(swipe_order)[index] == K_5:
-                    rx = band_pos[0][1][0]
-                    ry = band_pos[0][1][1]
-                    rectangle = pygame.Rect(rx - 10, ry - 10, space * 3 + 20, space + 5)
-                elif list(swipe_order)[index] == K_6:
-                    rx = band_pos[0][2][0]
-                    ry = band_pos[0][2][1]
-                    rectangle = pygame.Rect(rx - 10, ry - 10, space * 3 + 20, space + 5)
-                elif list(swipe_order)[index] == K_7:
-                    rx = band_pos[0][0][0]
-                    ry = band_pos[0][0][1] + 10
-                    vertices = [
-                        (rx - 35, ry + space / 2),
-                        (rx + space / 2, ry - 35),
-                        (rx + space * 3.2, ry + space * 2.5),
-                        (rx + space * 2.5, ry + space * 3.2),
-                    ]
-                    pygame.draw.polygon(screen, swipe_colors[x], vertices, 4)  # Draw the polygon
-                elif list(swipe_order)[index] == K_8:
-                    rx = band_pos[2][0][0] + space - 4
-                    ry = band_pos[2][0][1] + 8
-                    vertices = [
-                        (rx + 35, ry + space / 2),
-                        (rx - space / 2, ry - 35),
-                        (rx - space * 3.2, ry + space * 2.5),
-                        (rx - space * 2.5, ry + space * 3.2),
-                    ]
-                    pygame.draw.polygon(screen, swipe_colors[x], vertices, 4)  # Draw the polygon
-                pygame.draw.rect(screen, swipe_colors[x], rectangle, 4)
-
-            if len(swipe_order) == 3 and not attack_state:
-                attack_setup = True
-                attack_state = True
-
-            if attack_setup:
-                attack_setup = False
                 attack_counter = 0
-                for n in range(3):
-                    attack_order[n] = frontline[n]
+                queue = 0
+                attack_state = False
 
-            if attack_state:  # Attack animations
-                attack_timer += dt
-                power = 0
-                t1 = 0.6
-                t2 = 0.82
-                t3 = 1.6
-                speed = 1300
-                if attack_counter < 3:
-                    if t1 < attack_timer <= t2:
-                        xx = front_pos[0] + (attack_timer - t1) * speed
-                    elif t2 < attack_timer <= t3:
-                        strike = True
-                        xx = front_pos[0] + (t2 - t1) * speed - (attack_timer - t2) * 400
-                        for j in range(3):
-                            draw_text(
-                                f"-{damage[j]}",
-                                Fonts["helv30b"],
-                                dmg_color[j],
-                                enemies_pos[0][0] - 20,
-                                enemies_pos[0][1] + space * j,
-                            )
-                        if xx < front_pos[0]:
-                            xx = front_pos[0]
-                    for y in range(3):
-                        k = attack_counter
-                        screen.blit(Portrait[attack_order[k][y].name], (xx, front_pos[1] + space * y))
-                        power += attack_order[k][y].ATK
-                    else:
-                        xx = front_pos[0]
-                if strike and not strike_hold:
-                    dmg_color = [
-                        Colors["orange"],
-                    ] * 3
-                    for j in range(3):
-                        modifier = 1
-                        crit_chance = 100
-                        if 1 == random.choice(range(crit_chance)):
-                            dmg_color[j] = Colors["red"]  # Damage is red if crit
-                            modifier = 10
-                        damage[j] = power * modifier
-                        enemies[j].HP -= damage[j]
-                        if enemies[j].HP < 0:
-                            overkill -= enemies[j].HP
-                            enemies[j].HP = 0
-                    strike_hold = True
-                    strike = False
-                if attack_timer >= 2:
-                    attack_counter += 1
-                    if victory:
-                        attack_counter = 3
-                    attack_timer = 0
-                    strike_hold = False
-                    strike = False
-                if attack_counter == 3:
-                    enemy_attack = True
+        if health_pool == 0:
+            enemy_attack = False
+
+        if enemy_attack:
+            attack_timer += dt
+            enemy_power = 0
+            for x in range(3):
+                if enemies[x].HP > 0:
+                    enemy_power += enemies[x].ATK
+            if attack_timer > 0.5 and not enemy_done:
+                hp_band -= enemy_power
+                if np.sum(hp_band) <= 0:
+                    death_time = 0
+                enemy_done = True
+            elif enemy_done:
+                draw_text(f"-{enemy_power}", Fonts["helv35b"], Colors["red"], 320, 150)
+                if attack_timer > 2:
+                    enemy_attack = False
+                    enemy_done = False
+                    attack_counter = 0
+                    attack_order = {}
                     swipe_order = []
                     frontline = []
-                    attack_counter = 0
                     queue = 0
-                    attack_state = False
+                    strike_hold = False
+                    strike = False
 
-            if health_pool == 0:
-                enemy_attack = False
+    # swipe buttons
+    if game_state == "fight":
+        screen.blit(Png["swipes"], (0, 0))
 
-            if enemy_attack:
-                attack_timer += dt
-                enemy_power = 0
-                for x in range(3):
-                    if enemies[x].HP > 0:
-                        enemy_power += enemies[x].ATK
-                if attack_timer > 0.5 and not enemy_done:
-                    hp_band -= enemy_power
-                    if np.sum(hp_band) <= 0:
-                        death_time = 0
-                    enemy_done = True
-                elif enemy_done:
-                    draw_text(f"-{enemy_power}", Fonts["helv35b"], Colors["red"], 320, 150)
-                    if attack_timer > 2:
-                        enemy_attack = False
-                        enemy_done = False
-                        attack_counter = 0
-                        attack_order = {}
-                        swipe_order = []
-                        frontline = []
-                        queue = 0
-                        strike_hold = False
-                        strike = False
+    # home button
+    if game_state != "journey" or not "fight":
+        if Button(40, 30, Png["home"], 1).draw() and not buttoncheck:
+            game_state = "main_menu"
 
-        # swipe buttons
-        if game_state == "fight":
-            screen.blit(Png["swipes"], (0, 0))
+    pygame.display.update()
+    dt = clock.tick(framerate) / 1000  # Makes movement or time-related events work independent of framerate
+    if not pause:
+        true_counter += dt  # Total time game has been unpaused
+    if true_counter >= 2:  # Allow timedd for game to load
+        startup_state = False
+    realtime += dt  # Total play time
+    frame_counter += 1  # Total number of rendered frames
 
-        # home button
-        if game_state != "journey" or not "fight":
-            if Button(40, 30, Png["home"], 1).draw() and not buttoncheck:
-                game_state = "main_menu"
-
-        pygame.display.update()
-        dt = clock.tick(framerate) / 1000  # Makes movement or time-related events work independent of framerate
-        if not pause:
-            true_counter += dt  # Total time game has been unpaused
-        if true_counter >= 2:  # Allow timedd for game to load
-            startup_state = False
-        realtime += dt  # Total play time
-        frame_counter += 1  # Total number of rendered frames
-
-        # ~~~~~ End of game loop ~~~~~
-        await asyncio.sleep(0)
-
-
-asyncio.run(main())
+    # ~~~~~ End of game loop ~~~~~
+pygame.quit()
