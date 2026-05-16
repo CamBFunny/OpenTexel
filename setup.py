@@ -65,11 +65,15 @@ dt = 0
 true_counter = 0
 realtime = 0
 frame_counter = 0
+space = 180
+bx = 100
+by = 220
 
 # lists and tuples
 name_fuse = ["Fodder", "Ikuppi", "Banunu", "Sirsir"]
 stash_names = ["pixite", "voxite", "doxite", "tyxite"]
 stash_rgb = [Colors["orange"], Colors["silver"], Colors["yellow"], Colors["red"]]
+cat = ["", "HP ", "ATK", "DEF", "WIS", "AGI", "LV ", "SEF", ""]
 pull = fuse_dict = reserves = {}
 barracks = {}
 attack_order = {}
@@ -80,8 +84,6 @@ xyz = []
 og_health = []
 damage = [0, 0, 0]
 dmg_color = [Colors["orange"],] * 3
-
-# miscellaneous
 
 class Fighter:
     def __init__(self, name, keyname):

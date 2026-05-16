@@ -25,7 +25,7 @@ clock = pygame.time.Clock()
 # pygame.mouse.set_visible(False)     # Hide mouse cursor
 mouse_pos = pygame.mouse.get_pos()
 
-# bgm
+# bgm - background music
 pygame.mixer.music.load("lib/bgm/Defender of Texel OST - Menu (bgm_001).ogg")  # Background music
 pygame.mixer.music.set_volume(1.0)
 
@@ -42,9 +42,6 @@ band = np.array([[empty,] * 3] * 3)
 band_pos = np.array([[[0] * 2] * 3] * 3)
 my_band_pos = np.array([[[0] * 2] * 3] * 3)
 hp_band = np.array([[0,] * 3] * 3)
-space = 180
-bx = 100
-by = 220
 enemies_pos = np.array([[0] * 2] * 3)
 for x in range(3):
     enemies_pos[x] = [SCREEN_SIZE[0] - 300, by + 30 + space * x]
@@ -55,13 +52,7 @@ for x in range(3):
         my_band_pos[x][y] = [20 + xx * 0.7, yy * 0.7]
 
 front_pos = (band_pos[2][0][0] + 200, band_pos[2][0][1])
-
-enemies = np.array(
-    [
-        empty,
-    ]
-    * 3
-)
+enemies = np.array([empty,]* 3)
 
 # // FUNCTIONS //
 def draw_text(text, font, text_col, x, y):  # Function for outputting text onto the screen
@@ -122,7 +113,7 @@ Png = {}
 for n in filelist:
     Png[n] = pygame.image.load(f"lib/images/{n}.png")
 
-fuse_toggle = Png["fodder"]
+fuse_toggle = Png["fodder"] # placeholder
 
 def resize(self, scale, form):
     size = self.get_size()
@@ -540,16 +531,14 @@ while running:
             if check_fuse[m]:
                 screen.blit(Png["check"], (xx - 73, yy - 15))
             info = [pick.name, pick.HP, pick.ATK, pick.DEF, pick.WIS, pick.AGI, pick.LV, pick.SEF, pick.rarity]
-            cat = ["", "HP ", "ATK", "DEF", "WIS", "AGI", "LV ", "SEF", ""]
+            x_text = xx - 50
+            y_text = [yy,] * len(info)
+            y_text[0] = yy - 10
+            font_a = [Fonts["helv10b"],] * len(info)
+            font_a[0] = Fonts["helv20b"]
             for j in range(len(info)):
-                if j == 0:
-                    y_text = yy - 10
-                    font_a = Fonts["helv20b"]
-                else:
-                    y_text = yy
-                    font_a = Fonts["helv10b"]
-                x_text = xx - 50
-                draw_text(f"{cat[j]} {info[j]}", font_a, Colors["white"], x_text, y_text + 18 * j)
+                draw_text(f"{cat[j]} {info[j]}", font_a[j], Colors["white"],
+                          x_text, y_text[j] + 18 * j)
         if fuse_type == "self":
             fuse_toggle = Png["fodder"]
         elif fuse_type == "fodder":
@@ -585,6 +574,7 @@ while running:
             selection.XP += xp
             fuse_complete = True
         elif fuse_timer >= 1.2:
+
             draw_text(f"{selection.name}: {selection.XP}XP", Fonts["helv35b"], Colors["black"], 600, 280)
             draw_text(f"+{xp}", Fonts["helv25b"], Colors["black"], 800, 350)
             fuse_disp = resize(Portrait[selection.name], 250, 'height')
