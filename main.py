@@ -11,10 +11,10 @@ from pygame.locals import (KEYDOWN, QUIT, KEYUP, K_LCTRL,
 
 pygame.init()  # Initialize PyGame
 # Screen settings
-SCREEN_SIZE = [int(1280), int(800)]
-RESOLUTION_MOBILE = [int(540), int(960)]
-screen = pygame.display.set_mode(SCREEN_SIZE)
-center = (SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 2)
+res = [int(1280), int(800)] # resolution
+mobile_res = [int(540), int(960)]
+screen = pygame.display.set_mode(res)
+screen_center = (res[0] / 2, res[1] / 2)
 
 from setup import *
 
@@ -30,26 +30,28 @@ pygame.mixer.music.load("lib/bgm/Defender of Texel OST - Menu (bgm_001).ogg")  #
 pygame.mixer.music.set_volume(1.0)
 
 Fonts = {}
-fsizes = range(10, 70, 1)
+font_sizes = range(10, 70, 1)
 # Fonts
-for i in fsizes:
+for i in font_sizes:
     Fonts[f"mono{i}b"] = pygame.font.SysFont("Mono", i, bold=True)
     Fonts[f"mono{i}"] = pygame.font.SysFont("Mono", i, bold=False)
     Fonts[f"helv{i}b"] = pygame.font.SysFont("Helvetica", i, bold=True)
     Fonts[f"helv{i}"] = pygame.font.SysFont("Helvetica", i, bold=False)
 
+# numpy arrays
 band = np.array([[empty,] * 3] * 3)
 band_pos = np.array([[[0] * 2] * 3] * 3)
 my_band_pos = np.array([[[0] * 2] * 3] * 3)
 hp_band = np.array([[0,] * 3] * 3)
 enemies_pos = np.array([[0] * 2] * 3)
-for x in range(3):
-    enemies_pos[x] = [SCREEN_SIZE[0] - 300, by + 30 + space * x]
-    for y in range(3):
-        xx = bx + 30 + space * x
-        yy = by + 30 + space * y
-        band_pos[x][y] = [xx, yy]
-        my_band_pos[x][y] = [20 + xx * 0.7, yy * 0.7]
+
+for n in range(3):
+    enemies_pos[n] = [res[0] - 300, by + 30 + space * n]
+    for j in range(3):
+        xx = bx + 30 + space * n
+        yy = by + 30 + space * j
+        band_pos[n][j] = [xx, yy]
+        my_band_pos[n][j] = [20 + xx * 0.7, yy * 0.7]
 
 front_pos = (band_pos[2][0][0] + 200, band_pos[2][0][1])
 enemies = np.array([empty,]* 3)
@@ -138,11 +140,11 @@ Portrait["-"] = image("empty")
 Png["check"] = resize(Png["check"], 22, 'height')
 
 # Images
-panes = resize(Png["hm-panes"], SCREEN_SIZE[0], 'width')
-panes_build = resize(Png["build-panes"], SCREEN_SIZE[0], 'width')
-background = resize(Png["backdrop-1"], SCREEN_SIZE[0], 'width')
-bkg_fight = resize(Png["background"], SCREEN_SIZE[0], 'width')
-bkg_build = resize(Png["bkg-build"], SCREEN_SIZE[0], 'width')
+panes = resize(Png["hm-panes"], res[0], 'width')
+panes_build = resize(Png["build-panes"], res[0], 'width')
+background = resize(Png["backdrop-1"], res[0], 'width')
+bkg_fight = resize(Png["background"], res[0], 'width')
+bkg_build = resize(Png["bkg-build"], res[0], 'width')
 
 # ODS Import code
 file_path = "db_texel.ods"
@@ -336,13 +338,13 @@ while running:
 
     if game_state == "main_menu":
         if band[2][2].name != "-":
-            if Button(SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] - 68, Png["journey"], 1).draw() and not buttoncheck:
+            if Button(screen_center[0], res[1] - 68, Png["journey"], 1).draw() and not buttoncheck:
                 buttoncheck = True
                 game_state = "journey_menu"
-        if Button(285, SCREEN_SIZE[1] - y_btn, Png["build"], 1).draw() and not buttoncheck:
+        if Button(285, res[1] - y_btn, Png["build"], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = "build_menu"
-        if Button(1000, SCREEN_SIZE[1] - y_btn, Png["band"], 1).draw() and not buttoncheck:
+        if Button(1000, res[1] - y_btn, Png["band"], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = "band_menu"
             scroll = 0
@@ -352,7 +354,7 @@ while running:
             hp_tmp = hp_band[x][y]
 
     if game_state == "journey_menu":
-        if Button(center[0], center[1] + 200, Png["begin"], 1).draw() and not buttoncheck:
+        if Button(screen_center[0], screen_center[1] + 200, Png["begin"], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = "journey"
             pygame.mixer.music.load("lib/bgm/Defender of Texel OST - Battle (bgm_005).ogg")  # Background music
@@ -390,7 +392,7 @@ while running:
 
     if game_state == "build_menu":
         x_build = [360, SCREEN_SIZE[0] - 400]
-        y_build = [230, SCREEN_SIZE[1] - 280]
+        y_build = [230, res[1] - 280]
         stash_names = ["pixite", "voxite", "doxite", "tyxite"]
         img_build = [Png["build-pixite"], Png["build-voxite"], Png["build-doxite"], Png["build-tyxite"]]
         build_sel = 0
@@ -458,7 +460,7 @@ while running:
             results_timer += dt
             if results_timer >= 1:
                 num_display += 1
-        elif Button(SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] - 50, Png["continue"], 1).draw() and not buttoncheck:
+        elif Button(screen_center[0], res[1] - 50, Png["continue"], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = "build_menu"
         for n in range(num_display):
@@ -543,7 +545,7 @@ while running:
             fuse_toggle = Png["fodder"]
         elif fuse_type == "fodder":
             fuse_toggle = Png["self"]
-        if Button(800, SCREEN_SIZE[1] - 100, fuse_toggle, 1).draw() and not buttoncheck:
+        if Button(800, res[1] - 100, fuse_toggle, 1).draw() and not buttoncheck:
             buttoncheck = True
             if fuse_type == "self":
                 fuse_type = "fodder"
@@ -551,7 +553,7 @@ while running:
                 fuse_type = "self"
             fuse_setup = True
         if fuse_counter > 0:
-            if Button(500, SCREEN_SIZE[1] - 100, Png["fuse"], 1).draw() and not buttoncheck:
+            if Button(500, res[1] - 100, Png["fuse"], 1).draw() and not buttoncheck:
                 fuse_num = fuse_counter
                 game_state = "fuse_animation"
                 fuse_timer = 0
@@ -584,7 +586,7 @@ while running:
             game_state = "main_menu"
 
     if game_state == "band_menu":
-        if Button(1000, SCREEN_SIZE[1] - y_btn, Png["fuse_setup"], 1).draw() and not buttoncheck:
+        if Button(1000, res[1] - y_btn, Png["fuse_setup"], 1).draw() and not buttoncheck:
             buttoncheck = True
             game_state = "fuse_setup"
         if band_init:
@@ -723,7 +725,7 @@ while running:
                     enemy_xp += enemies[x].XP
                     enemy_power += enemies[x].ATK
         elif encounter and game_state != "fight":
-            if Button(center[0], center[1], Png["fight"], 1).draw() and not buttoncheck:
+            if Button(screen_center[0], screen_center[1], Png["fight"], 1).draw() and not buttoncheck:
                 game_state = "fight"
                 attack_counter = 0
                 attack_state = False
